@@ -1,0 +1,15 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#5F0A05",
+        "titleBar.activeBackground": "#850E06",
+        "titleBar.activeForeground": "#FFFCFB"
+    },
+    "python.autoComplete.extraPaths": [
+        "/home/changju/multibot_ws/install/multibot_ros2_interface/lib/python3.8/site-packages",
+        "/opt/ros/foxy/lib/python3.8/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/changju/multibot_ws/install/multibot_ros2_interface/lib/python3.8/site-packages",
+        "/opt/ros/foxy/lib/python3.8/site-packages"
+    ]
+}
