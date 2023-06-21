@@ -11,5 +11,10 @@
     "python.analysis.extraPaths": [
         "/home/changju/multibot_ws/install/multibot_ros2_interface/lib/python3.8/site-packages",
         "/opt/ros/foxy/lib/python3.8/site-packages"
-    ]
+    ],
+    "files.associations": {
+        "functional": "cpp",
+        "cmath": "cpp",
+        "ostream": "cpp"
+    }
 }

@@ -11,9 +11,12 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
   <depend>rclpy</depend>
   <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>multibot_ros2_interface</depend>
+  <depend>multibot_util</depend>
 
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
