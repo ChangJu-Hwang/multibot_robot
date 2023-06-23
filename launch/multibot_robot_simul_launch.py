@@ -32,9 +32,11 @@ def generate_launch_description():
         namespace='robot_namespace',
         executable='robot',
         name='robot',
-        parameters=[
-            {'namespace': LaunchConfiguration('robot_namespace')}
-        ],
+        parameters=[{
+            'namespace': LaunchConfiguration('robot_namespace'),
+            'linear_tolerance': LaunchConfiguration('linear_tolerance'),
+            'angular_tolerance': LaunchConfiguration('angular_tolerance')
+        }],
         output='screen'
     )
 
