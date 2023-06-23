@@ -24,8 +24,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(multibot_ros2_interface REQUIRED)
+find_package(multibot_util REQUIRED)
 
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 find_package(gazebo_ros REQUIRED)
 
@@ -40,7 +42,9 @@ include_directories(
 set(ROBOT_DEPENDENCIES
   "rclcpp"
   "geometry_msgs"
+  "nav_msgs"
   "multibot_ros2_interface"
+  "multibot_util"
 )
 set(ROBOT_EXEC_NAME "robot")
 file(GLOB ROBOT_SOURCES "src/*.cpp")
@@ -73,7 +77,6 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()
-
 
 ################################################################################
 # Find and load build settings from external packages
