@@ -1,7 +1,7 @@
 #include <iostream>
 #include <memory>
 
-#include "robot.hpp"
+#include "multibot_robot/robot.hpp"
 
 int main(int argc, char * argv[])
 {
