@@ -12,6 +12,9 @@ double Motion::VelocityComputer(
 
     if (std::fabs(_max_s) < 1e-8)
         return v;
+    
+    if (TotalMoveTimeComputer(_max_s, _max_vel, _max_acc) < _time)
+        return v;
 
     double max_v    = std::fabs(_max_vel);
     double max_a    = std::fabs(_max_acc);

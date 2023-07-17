@@ -57,7 +57,7 @@ void MultibotRobot::receivePath(
     is_activated_ = true;
     localPathIdx_ = 0;
 
-    time_ = _request->start_time;
+    time_ = -1 * _request->start_time;
     path_.clear();
     for (const auto &localPath : _request->path)
     {
@@ -131,8 +131,7 @@ void MultibotRobot::control()
     }
     
     // Move
-    if(time_ > path_[localPathIdx_].arrival_time_ - path_[localPathIdx_].translational_duration_ + 1e-8 and
-       Position::getAngleDiff(robot_.pose_, path_[localPathIdx_].goal_) < angular_tolerance_)
+    if(time_ > path_[localPathIdx_].arrival_time_ - path_[localPathIdx_].translational_duration_ + 1e-8)
     {
         cmd_vel.linear.x = Motion::VelocityComputer(
             path_[localPathIdx_].distance_, robot_.max_linVel_, robot_.max_linAcc_,
