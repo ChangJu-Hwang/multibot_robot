@@ -57,7 +57,7 @@ void MultibotRobot::receivePath(
     is_activated_ = true;
     localPathIdx_ = 0;
 
-    time_ = _request->start_time;
+    time_ = -1 * _request->start_time;
     path_.clear();
     for (const auto &localPath : _request->path)
     {
