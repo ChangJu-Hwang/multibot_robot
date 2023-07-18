@@ -82,6 +82,7 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "bit": "cpp"
+        "bit": "cpp",
+        "multibot_ros2_interface": "cpp"
     }
 }

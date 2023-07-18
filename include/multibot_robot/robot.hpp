@@ -21,11 +21,11 @@ namespace Robot
     class MultibotRobot : public rclcpp::Node
     {
     private:
-        using RobotInfo         = multibot_ros2_interface::srv::RobotInfo;
-        using RobotState        = multibot_ros2_interface::msg::RobotState;
-        using LocalPath         = multibot_ros2_interface::msg::LocalPath;
-        using Path              = multibot_ros2_interface::srv::Path;
-    
+        using RobotInfo = multibot_ros2_interface::srv::RobotInfo;
+        using RobotState = multibot_ros2_interface::msg::RobotState;
+        using LocalPath = multibot_ros2_interface::msg::LocalPath;
+        using Path = multibot_ros2_interface::srv::Path;
+
     private:
         struct PathSegment
         {
@@ -43,15 +43,15 @@ namespace Robot
 
             PathSegment(const LocalPath &_localPath);
         };
-    
+
     private:
         void saveRobotInfo(
-            const std::shared_ptr<RobotInfo::Request>   _request,
-            std::shared_ptr<RobotInfo::Response>        _response);
-        
+            const std::shared_ptr<RobotInfo::Request> _request,
+            std::shared_ptr<RobotInfo::Response> _response);
+
         void receivePath(
-            const std::shared_ptr<Path::Request>    _request,
-            std::shared_ptr<Path::Response>         _response);
+            const std::shared_ptr<Path::Request> _request,
+            std::shared_ptr<Path::Response> _response);
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg);
 
@@ -68,20 +68,25 @@ namespace Robot
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
 
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-    
+
+    private:
+        Position::Pose PoseComputer(
+            const PathSegment _pathSegment,
+            const double _time);
+
     private:
         AgentInstance::Agent robot_;
 
         std::vector<PathSegment> path_;
         int localPathIdx_;
         bool is_activated_;
-        
+
         double time_;
         double timeStep_;
 
         double linear_tolerance_;
         double angular_tolerance_;
-    
+
     public:
         MultibotRobot();
         ~MultibotRobot();

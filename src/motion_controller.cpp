@@ -4,6 +4,33 @@
 
 using namespace MAPF_Util;
 
+double Motion::DisplacementComputer(
+    const double _max_s, const double _max_vel, const double _max_acc,
+    const double _time)
+{
+    if (std::fabs(_max_s) < 1e-8)
+        return 0.0;
+    
+    // Trapezoidal Velocity Profile
+    if (std::fabs(_max_s) > _max_vel * _max_vel / _max_acc + 1e-8)
+    {
+        if (_time < _max_vel / _max_acc)
+            return (0.5 * _max_acc * _time * _time);
+        else if (_time < std::fabs(_max_s) / _max_vel)
+            return (_max_vel * _time - 0.5 * _max_vel * _max_vel / _max_acc);
+        else
+            return (std::fabs(_max_s) - 0.5 * _max_acc * std::pow(std::fabs(_max_s) / _max_vel + _max_vel / _max_acc - _time,2));
+    }
+    // Triangular Velocity Profile
+    else
+    {
+        if (_time < std::sqrt(std::fabs(_max_s) / _max_acc))
+            return (0.5 * _max_acc * _time * _time);
+        else
+            return (std::fabs(_max_s) - 0.5 * _max_acc * std::pow(2 * std::sqrt(std::fabs(_max_s) / _max_acc) - _time,2));
+    }
+}
+
 double Motion::VelocityComputer(
     const double _max_s, const double _max_vel, const double _max_acc,
     const double _time)
