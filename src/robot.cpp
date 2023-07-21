@@ -127,12 +127,8 @@ void MultibotRobot::control()
         return;
     }
 
-    bool print = false;
     if (time_ > path_[localPathIdx_].arrival_time_+ 1e-8 )
-    {
         localPathIdx_++;
-        print = true;
-    }
 
     if (localPathIdx_ >= static_cast<int>(path_.size()))
     {
@@ -172,17 +168,8 @@ void MultibotRobot::control()
             time_ - path_[localPathIdx_].departure_time_ - path_[localPathIdx_].rotational_duration_);
     }
 
-    double Kx, Ky, Ktheta;
-    Kx = 0.25, Ky = 1.00, Ktheta = 1.27;
-    cmd_vel.linear.x = vRef * cos(thetaError) + Kx * xError;
-    cmd_vel.angular.z = wRef + vRef * (Ky * yError + Ktheta * sin(thetaError));
-
-    if (print)
-    {
-        print = false;
-        std::cout << "Current Pose: " << robot_.pose_ << " | "
-                  << "Reference Pose: " << reference_pose << std::endl;
-    }
+    cmd_vel.linear.x = vRef * cos(thetaError) + Kx_ * xError;
+    cmd_vel.angular.z = wRef + vRef * (Ky_ * yError + Ktheta_ * sin(thetaError));
 
     time_ = time_ + timeStep_;
     cmd_vel_pub_->publish(cmd_vel);
@@ -260,6 +247,10 @@ MultibotRobot::MultibotRobot()
     std::string robotNamespace = this->get_parameter("namespace").as_string();
     this->get_parameter_or("linear_tolerance", linear_tolerance_, 0.10);
     this->get_parameter_or("angular_tolerance", angular_tolerance_, 0.018);
+
+    this->get_parameter_or("Kx", Kx_, 0.25);
+    this->get_parameter_or("Ky", Ky_, 1.00);
+    this->get_parameter_or("Ktheta", Ktheta_, 1.27);
 
     registration_ = this->create_service<RobotInfo>(
         "/" + robotNamespace + "/info",

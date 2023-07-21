@@ -84,8 +84,12 @@ namespace Robot
         double time_;
         double timeStep_;
 
+        // Current: Does not use.
         double linear_tolerance_;
         double angular_tolerance_;
+
+        // Kanayama Controller Parameter
+        double Kx_, Ky_, Ktheta_;
 
     public:
         MultibotRobot();

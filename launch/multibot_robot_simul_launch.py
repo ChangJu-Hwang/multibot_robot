@@ -35,7 +35,10 @@ def generate_launch_description():
         parameters=[{
             'namespace': LaunchConfiguration('robot_namespace'),
             'linear_tolerance': LaunchConfiguration('linear_tolerance'),
-            'angular_tolerance': LaunchConfiguration('angular_tolerance')
+            'angular_tolerance': LaunchConfiguration('angular_tolerance'),
+            'Kx': LaunchConfiguration('Kx'),
+            'Ky': LaunchConfiguration('Ky'),
+            'Ktheta': LaunchConfiguration('Ktheta')
         }],
         output='screen'
     )
