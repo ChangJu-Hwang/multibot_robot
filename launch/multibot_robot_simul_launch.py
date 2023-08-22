@@ -29,7 +29,7 @@ def generate_launch_description():
     # Robot Node
     multibot_robot_cmd = Node(
         package='multibot_robot',
-        namespace='robot_namespace',
+        namespace=LaunchConfiguration('robot_namespace'),
         executable='robot',
         name='robot',
         parameters=[{
