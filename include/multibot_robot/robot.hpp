@@ -7,12 +7,12 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 
-#include <QApplication>
-
 #include "multibot_util/Instance.hpp"
 #include "multibot_robot/motion_controller.hpp"
 #include "multibot_robot/robot_panel.hpp"
 
+#include "multibot_ros2_interface/srv/connection.hpp"
+#include "multibot_ros2_interface/srv/disconnection.hpp"
 #include "multibot_ros2_interface/srv/robot_info.hpp"
 #include "multibot_ros2_interface/msg/robot_state.hpp"
 #include "multibot_ros2_interface/srv/path.hpp"
@@ -24,6 +24,8 @@ namespace Robot
     class MultibotRobot : public rclcpp::Node, public Observer::ObserverInterface<PanelUtil::Msg>
     {
     private:
+        using Connection = multibot_ros2_interface::srv::Connection;
+        using Disconnection = multibot_ros2_interface::srv::Disconnection;
         using RobotInfo = multibot_ros2_interface::srv::RobotInfo;
         using RobotState = multibot_ros2_interface::msg::RobotState;
         using LocalPath = multibot_ros2_interface::msg::LocalPath;
@@ -47,10 +49,17 @@ namespace Robot
             PathSegment(const LocalPath &_localPath);
         };
 
-    public:
+    public:        
         void execRobotPanel(int argc, char *argv[]);
 
     private:
+        void init(std::chrono::milliseconds _timeStep);
+
+        void loadRobotInfo();
+
+        bool request_connection();
+        bool request_disconnection();
+
         void saveRobotInfo(
             const std::shared_ptr<RobotInfo::Request> _request,
             std::shared_ptr<RobotInfo::Response> _response);
@@ -68,6 +77,8 @@ namespace Robot
     private:
         rclcpp::TimerBase::SharedPtr update_timer_;
 
+        rclcpp::Client<Connection>::SharedPtr connection_;
+        rclcpp::Client<Disconnection>::SharedPtr disconnection_;
         rclcpp::Service<RobotInfo>::SharedPtr registration_;
         rclcpp::Service<Path>::SharedPtr control_command_;
         rclcpp::Publisher<RobotState>::SharedPtr robotState_pub_;
@@ -89,6 +100,8 @@ namespace Robot
         std::vector<PathSegment> path_;
         int localPathIdx_;
         bool is_activated_;
+
+        std::string robotNamespace_;
 
         double time_;
         double timeStep_;

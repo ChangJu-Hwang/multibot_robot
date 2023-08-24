@@ -5,6 +5,8 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 
+#include <QApplication>
+
 using namespace std::chrono_literals;
 
 using namespace Instance;
@@ -38,12 +40,141 @@ void MultibotRobot::execRobotPanel(int argc, char *argv[])
     QApplication app(argc, argv);
 
     robotPanel_ = std::make_shared<Panel>();
+    robotPanel_->setRobotName(robot_.name_);
     robotPanel_->attach(*this);
     robotPanel_->show();
 
     is_pannel_running_ = true;
 
     app.exec();
+}
+
+void MultibotRobot::init(std::chrono::milliseconds _timeStep)
+{
+    timeStep_ = _timeStep.count() * 1e-3;
+
+    is_activated_ = false;
+    is_pannel_running_ = false;
+
+    this->declare_parameter("name");
+    this->declare_parameter("linear_tolerance");
+    this->declare_parameter("angular_tolerance");
+
+    robotNamespace_ = this->get_parameter("name").as_string();
+    this->get_parameter_or("linear_tolerance", linear_tolerance_, 0.10);
+    this->get_parameter_or("angular_tolerance", angular_tolerance_, 0.018);
+
+    this->get_parameter_or("Kx", Kx_, 0.25);
+    this->get_parameter_or("Ky", Ky_, 1.00);
+    this->get_parameter_or("Ktheta", Ktheta_, 1.27);
+
+    loadRobotInfo();
+}
+
+void MultibotRobot::loadRobotInfo()
+{
+    this->declare_parameter("type");
+
+    robot_.name_ = this->get_parameter("name").as_string();
+    robot_.type_ = this->get_parameter("type").as_string();
+
+    if (is_pannel_running_)
+        robotPanel_->setRobotName(robot_.name_);
+
+    this->declare_parameter(robot_.type_ + ".size");
+    this->declare_parameter(robot_.type_ + ".wheels.separation");
+    this->declare_parameter(robot_.type_ + ".wheels.radius");
+
+    this->declare_parameter(robot_.type_ + ".linear.velocity");
+    this->declare_parameter(robot_.type_ + ".linear.acceleration");
+    this->declare_parameter(robot_.type_ + ".angular.velocity");
+    this->declare_parameter(robot_.type_ + ".angular.acceleration");
+
+    this->declare_parameter("goal.x");
+    this->declare_parameter("goal.y");
+    this->declare_parameter("goal.theta");
+
+    this->get_parameter_or(robot_.type_ + ".size", robot_.size_, 0.0);
+    this->get_parameter_or(robot_.type_ + ".wheels.separation", robot_.wheel_seperation_, 0.0);
+    this->get_parameter_or(robot_.type_ + ".wheels.radius", robot_.wheel_radius_, 0.0);
+
+    this->get_parameter_or(robot_.type_ + ".linear.velocity", robot_.max_linVel_, 0.0);
+    this->get_parameter_or(robot_.type_ + ".linear.acceleration", robot_.max_linAcc_, 0.0);
+    this->get_parameter_or(robot_.type_ + ".angular.velocity", robot_.max_angVel_, 0.0);
+    this->get_parameter_or(robot_.type_ + ".angular.acceleration", robot_.max_angAcc_, 0.0);
+
+    geometry_msgs::msg::Pose2D goalPose;
+    this->get_parameter_or("goal.x", goalPose.x, 0.0);
+    this->get_parameter_or("goal.y", goalPose.y, 0.0);
+    this->get_parameter_or("goal.theta", goalPose.theta, 0.0);
+    robot_.goal_ = goalPose;
+}
+
+bool MultibotRobot::request_connection()
+{
+    while (!connection_->wait_for_service(1s))
+    {
+        if (!rclcpp::ok())
+        {
+            RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service.");
+            return false;
+        }
+        RCLCPP_ERROR(this->get_logger(), "Connection not available, waiting again...");
+    }
+
+    auto request = std::make_shared<Connection::Request>();
+
+    request->config.name = robot_.name_;
+    request->config.type = robot_.type_;
+    request->config.size = robot_.size_;
+    request->config.wheel_radius = robot_.wheel_radius_;
+    request->config.wheel_seperation = robot_.wheel_seperation_;
+
+    request->config.max_linvel = robot_.max_linVel_;
+    request->config.max_linacc = robot_.max_linAcc_;
+    request->config.max_angvel = robot_.max_angVel_;
+    request->config.max_angacc = robot_.max_angAcc_;
+
+    request->goal = robot_.goal_.component_;
+
+    auto response_received_callback = [this](rclcpp::Client<Connection>::SharedFuture _future)
+    {
+        auto response = _future.get();
+        return;
+    };
+
+    auto future_result = 
+        connection_->async_send_request(request, response_received_callback);
+
+    return future_result.get()->is_connected;
+}
+
+bool MultibotRobot::request_disconnection()
+{
+    while (!disconnection_->wait_for_service(1s))
+    {
+        if (!rclcpp::ok())
+        {
+            RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service.");
+            return false;
+        }
+        RCLCPP_ERROR(this->get_logger(), "Disconnection not available, waiting again...");
+    }
+
+    auto request = std::make_shared<Disconnection::Request>();
+
+    request->name = robot_.name_;
+    
+    auto response_received_callback = [this](rclcpp::Client<Disconnection>::SharedFuture _future)
+    {
+        auto response = _future.get();
+        return;
+    };
+
+    auto future_result = 
+        disconnection_->async_send_request(request, response_received_callback);
+
+    return future_result.get()->is_disconnected;
 }
 
 void MultibotRobot::saveRobotInfo(
@@ -266,13 +397,19 @@ void MultibotRobot::update(const PanelUtil::Msg &_msg)
     switch (_msg.first)
     {
     case PanelUtil::Request::CONNECTION_REQUEST:
-        robotPanel_->setConnectionState(true);
+    {
+        bool is_connected = request_connection();
+        robotPanel_->setConnectionState(is_connected);
         break;
+    }
 
     case PanelUtil::Request::DISCONNECTION_REQUEST:
-        robotPanel_->setConnectionState(false);
+    {
+        bool is_disconnected = request_disconnection();
+        robotPanel_->setConnectionState(not(is_disconnected));
         break;
-
+    }
+        
     default:
         break;
     }
@@ -282,39 +419,27 @@ MultibotRobot::MultibotRobot()
     : Node("robot")
 {
     auto qos = rclcpp::QoS(rclcpp::KeepLast(10));
-
     auto timeStep = 10ms;
-    timeStep_ = timeStep.count() * 1e-3;
 
-    is_activated_ = false;
-    is_pannel_running_ = false;
+    init(timeStep);
 
-    this->declare_parameter("namespace");
-    this->declare_parameter("linear_tolerance");
-    this->declare_parameter("angular_tolerance");
-
-    std::string robotNamespace = this->get_parameter("namespace").as_string();
-    this->get_parameter_or("linear_tolerance", linear_tolerance_, 0.10);
-    this->get_parameter_or("angular_tolerance", angular_tolerance_, 0.018);
-
-    this->get_parameter_or("Kx", Kx_, 0.25);
-    this->get_parameter_or("Ky", Ky_, 1.00);
-    this->get_parameter_or("Ktheta", Ktheta_, 1.27);
+    connection_ = this->create_client<Connection>("/connection");
+    disconnection_ = this->create_client<Disconnection>("/disconnection");
 
     registration_ = this->create_service<RobotInfo>(
-        "/" + robotNamespace + "/info",
+        "/" + robotNamespace_ + "/info",
         std::bind(&MultibotRobot::saveRobotInfo, this, std::placeholders::_1, std::placeholders::_2));
 
     control_command_ = this->create_service<Path>(
-        "/" + robotNamespace + "/path",
+        "/" + robotNamespace_ + "/path",
         std::bind(&MultibotRobot::receivePath, this, std::placeholders::_1, std::placeholders::_2));
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/" + robotNamespace + "/odom", qos,
+        "/" + robotNamespace_ + "/odom", qos,
         std::bind(&MultibotRobot::odom_callback, this, std::placeholders::_1));
 
-    robotState_pub_ = this->create_publisher<RobotState>("/" + robotNamespace + "/state", qos);
-    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/" + robotNamespace + "/cmd_vel", qos);
+    robotState_pub_ = this->create_publisher<RobotState>("/" + robotNamespace_ + "/state", qos);
+    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/" + robotNamespace_ + "/cmd_vel", qos);
 
     update_timer_ = this->create_wall_timer(
         timeStep, std::bind(&MultibotRobot::publish_topics, this));
@@ -324,5 +449,6 @@ MultibotRobot::MultibotRobot()
 
 MultibotRobot::~MultibotRobot()
 {
+    request_disconnection();
     RCLCPP_INFO(this->get_logger(), "MultibotRobot has been terminated");
 }

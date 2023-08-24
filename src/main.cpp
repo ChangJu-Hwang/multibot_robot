@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
         [&argc, &argv, robot]()
         {
             robot->execRobotPanel(argc,argv);
+            std::cout << "execRobotPanel Complete" << std::endl;
         }
     );
 

@@ -19,6 +19,10 @@ def generate_launch_description():
                 '-y', launch.substitutions.LaunchConfiguration('y'),
                 '-Y', launch.substitutions.LaunchConfiguration('Y')
             ],
+            # https://docs.ros.org/en/foxy/Tutorials/Intermediate/Launch/Creating-Launch-Files.html
+            # remappings=[
+
+            # ]
         )
     ])
     

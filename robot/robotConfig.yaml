@@ -1,0 +1,19 @@
+/**:
+  ros__parameters:
+    ISR_M2:
+      size: 0.70
+      wheels:
+        separation: 0.5
+        radius: 0.32
+      linear:
+        velocity: 0.4
+        acceleration: 0.5
+        tolerance: 0.10
+      angular:
+        velocity: 0.4
+        acceleration: 0.5
+        tolerance: 0.018
+      controlParam:
+        Kx: 0.25
+        Ky: 1.00
+        Ktheta: 1.27

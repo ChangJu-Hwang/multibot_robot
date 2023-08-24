@@ -68,6 +68,8 @@ namespace Robot
         void setModeState(PanelUtil::Mode _mode_state) { mode_state_ = _mode_state; }
         void setVelocity(double _lin_vel, double _ang_vel);
 
+        void setRobotName(const std::string _robotName);
+
         PanelUtil::Mode getMode() { return mode_state_; }
         geometry_msgs::msg::Twist get_cmd_vel();
 

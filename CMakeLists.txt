@@ -83,6 +83,7 @@ install(DIRECTORY
   launch
   models
   ui
+  robot
   DESTINATION share/${PROJECT_NAME}
 )
 

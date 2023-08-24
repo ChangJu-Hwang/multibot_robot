@@ -87,6 +87,8 @@
         "qtwidgets": "cpp",
         "qtimer": "cpp",
         "*.ui": "xml",
-        "qwidget": "cpp"
+        "qwidget": "cpp",
+        "codecvt": "cpp",
+        "filesystem": "cpp"
     }
 }

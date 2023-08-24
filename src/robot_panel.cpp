@@ -148,6 +148,11 @@ void Robot::Panel::setVelocity(double _lin_vel, double _ang_vel)
     ang_vel_ = _ang_vel;
 }
 
+void Robot::Panel::setRobotName(const std::string _robotName)
+{
+    ui_->label_Robot_Name->setText(QString::fromStdString(_robotName));
+}
+
 geometry_msgs::msg::Twist Robot::Panel::get_cmd_vel()
 {
     geometry_msgs::msg::Twist cmd_vel;
