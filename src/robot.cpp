@@ -33,6 +33,19 @@ MultibotRobot::PathSegment::PathSegment(const LocalPath &_localPath)
     angle_ = angleSign * Position::getAngleDiff(start_, goal_);
 }
 
+void MultibotRobot::execRobotPanel(int argc, char *argv[])
+{
+    QApplication app(argc, argv);
+
+    robotPanel_ = std::make_shared<Panel>();
+    robotPanel_->attach(*this);
+    robotPanel_->show();
+
+    is_pannel_running_ = true;
+
+    app.exec();
+}
+
 void MultibotRobot::saveRobotInfo(
     const std::shared_ptr<RobotInfo::Request> _request,
     std::shared_ptr<RobotInfo::Response> _response)
@@ -73,6 +86,7 @@ void MultibotRobot::receivePath(
     }
 
     _response->receive_status = true;
+    robotPanel_->setModeState(PanelUtil::Mode::REMOTE);
 }
 
 void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg)
@@ -90,6 +104,13 @@ void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom
     m.getRPY(roll, pitch, yaw);
 
     robot_.pose_.component_.theta = yaw;
+
+    if (robotPanel_->getMode() == PanelUtil::Mode::REMOTE)
+    {
+        robotPanel_->setVelocity(
+            _odom_msg->twist.twist.linear.x,
+            _odom_msg->twist.twist.angular.z);
+    }
 }
 
 void MultibotRobot::publish_topics()
@@ -114,6 +135,13 @@ void MultibotRobot::control()
 {
     geometry_msgs::msg::Twist cmd_vel;
 
+    if (is_pannel_running_ == true and
+        robotPanel_->getMode() == PanelUtil::MANUAL)
+    {
+        cmd_vel_pub_->publish(robotPanel_->get_cmd_vel());
+        return;
+    }
+
     if (not(is_activated_))
     {
         cmd_vel_pub_->publish(cmd_vel);
@@ -127,7 +155,7 @@ void MultibotRobot::control()
         return;
     }
 
-    if (time_ > path_[localPathIdx_].arrival_time_+ 1e-8 )
+    if (time_ > path_[localPathIdx_].arrival_time_ + 1e-8)
         localPathIdx_++;
 
     if (localPathIdx_ >= static_cast<int>(path_.size()))
@@ -230,6 +258,26 @@ Position::Pose MultibotRobot::PoseComputer(
     return pose;
 }
 
+void MultibotRobot::update(const PanelUtil::Msg &_msg)
+{
+    if (not(is_pannel_running_))
+        return;
+
+    switch (_msg.first)
+    {
+    case PanelUtil::Request::CONNECTION_REQUEST:
+        robotPanel_->setConnectionState(true);
+        break;
+
+    case PanelUtil::Request::DISCONNECTION_REQUEST:
+        robotPanel_->setConnectionState(false);
+        break;
+
+    default:
+        break;
+    }
+}
+
 MultibotRobot::MultibotRobot()
     : Node("robot")
 {
@@ -239,6 +287,7 @@ MultibotRobot::MultibotRobot()
     timeStep_ = timeStep.count() * 1e-3;
 
     is_activated_ = false;
+    is_pannel_running_ = false;
 
     this->declare_parameter("namespace");
     this->declare_parameter("linear_tolerance");

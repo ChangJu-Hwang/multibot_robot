@@ -86,7 +86,7 @@
         "multibot_ros2_interface": "cpp",
         "qtwidgets": "cpp",
         "qtimer": "cpp",
-        "*.ui": "cpp",
+        "*.ui": "xml",
         "qwidget": "cpp"
     }
 }

@@ -7,8 +7,11 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 
+#include <QApplication>
+
 #include "multibot_util/Instance.hpp"
 #include "multibot_robot/motion_controller.hpp"
+#include "multibot_robot/robot_panel.hpp"
 
 #include "multibot_ros2_interface/srv/robot_info.hpp"
 #include "multibot_ros2_interface/msg/robot_state.hpp"
@@ -18,7 +21,7 @@ using namespace Instance;
 
 namespace Robot
 {
-    class MultibotRobot : public rclcpp::Node
+    class MultibotRobot : public rclcpp::Node, public Observer::ObserverInterface<PanelUtil::Msg>
     {
     private:
         using RobotInfo = multibot_ros2_interface::srv::RobotInfo;
@@ -43,6 +46,9 @@ namespace Robot
 
             PathSegment(const LocalPath &_localPath);
         };
+
+    public:
+        void execRobotPanel(int argc, char *argv[]);
 
     private:
         void saveRobotInfo(
@@ -73,6 +79,9 @@ namespace Robot
         Position::Pose PoseComputer(
             const PathSegment _pathSegment,
             const double _time);
+        
+    public:
+        void update(const PanelUtil::Msg &_msg) override;
 
     private:
         AgentInstance::Agent robot_;
@@ -90,6 +99,9 @@ namespace Robot
 
         // Kanayama Controller Parameter
         double Kx_, Ky_, Ktheta_;
+
+        std::shared_ptr<Panel> robotPanel_;
+        bool is_pannel_running_;
 
     public:
         MultibotRobot();

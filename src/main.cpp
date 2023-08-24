@@ -22,13 +22,9 @@ int main(int argc, char *argv[])
         });
 
     auto panelThread = std::async(
-        [&argc, &argv]()
+        [&argc, &argv, robot]()
         {
-            QApplication app(argc, argv);
-
-            RobotPanel robotPanel;
-            robotPanel.show();
-            app.exec();
+            robot->execRobotPanel(argc,argv);
         }
     );
 
