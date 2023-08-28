@@ -156,6 +156,11 @@ void Robot::Panel::set_pushButton_Connect_clicked()
     ui_->pushButton_Connect->clicked(true);
 }
 
+void Robot::Panel::set_pushButton_Manual_clicked()
+{
+    ui_->pushButton_Manual->clicked(true);
+}
+
 void Robot::Panel::setRobotName(const std::string _robotName)
 {
     ui_->label_Robot_Name->setText(QString::fromStdString(_robotName));

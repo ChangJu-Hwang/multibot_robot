@@ -65,6 +65,7 @@ namespace Robot
             const std::shared_ptr<ModeSelection::Request> _request,
             std::shared_ptr<ModeSelection::Response> _response);
         void respond_to_serverScan(const std_msgs::msg::Bool::SharedPtr _msg);
+        void respond_to_emergencyStop(const std_msgs::msg::Bool::SharedPtr _msg);
         void respond_to_kill(const std_msgs::msg::Bool::SharedPtr _msg);
 
         void receivePath(
@@ -83,6 +84,7 @@ namespace Robot
         rclcpp::Client<Connection>::SharedPtr connection_;
         rclcpp::Client<Disconnection>::SharedPtr disconnection_;
         rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr serverScan_;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr emergencyStop_;
         rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr killRobot_;
         rclcpp::Service<ModeSelection>::SharedPtr modeFromServer_;
         rclcpp::Client<ModeSelection>::SharedPtr modeFromRobot_;

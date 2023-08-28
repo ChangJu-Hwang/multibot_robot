@@ -232,6 +232,14 @@ void MultibotRobot::respond_to_serverScan(const std_msgs::msg::Bool::SharedPtr _
     robotPanel_->set_pushButton_Connect_clicked();
 }
 
+void MultibotRobot::respond_to_emergencyStop(const std_msgs::msg::Bool::SharedPtr _msg)
+{
+    if (_msg->data == false)
+        return;
+    
+    robotPanel_->set_pushButton_Manual_clicked();
+}
+
 void MultibotRobot::respond_to_kill(const std_msgs::msg::Bool::SharedPtr _msg)
 {
     if (_msg->data == false)
@@ -266,7 +274,7 @@ void MultibotRobot::receivePath(
     }
 
     _response->receive_status = true;
-    robotPanel_->setModeState(PanelUtil::Mode::REMOTE);
+    robotPanel_->setModeState(PanelUtil::Mode::AUTO);
 }
 
 void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg)
@@ -326,6 +334,12 @@ void MultibotRobot::control()
         return;
     }
 
+    if (is_pannel_running_ == true and 
+        robotPanel_->getModeState() == PanelUtil::REMOTE)
+    {
+        return;
+    }
+
     if (not(is_activated_))
     {
         return;
@@ -346,6 +360,9 @@ void MultibotRobot::control()
         is_activated_ = false;
         cmd_vel_pub_->publish(cmd_vel);
         std::cout << "Current Pose: " << robot_.pose_ << std::endl;
+
+        robotPanel_->set_pushButton_Manual_clicked();
+
         return;
     }
 
@@ -515,6 +532,9 @@ MultibotRobot::MultibotRobot()
 
     serverScan_ = this->create_subscription<std_msgs::msg::Bool>(
         "/server_scan", qos, std::bind(&MultibotRobot::respond_to_serverScan, this, std::placeholders::_1));
+
+    emergencyStop_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/emergency_stop", qos, std::bind(&MultibotRobot::respond_to_emergencyStop, this, std::placeholders::_1));
 
     killRobot_ = this->create_subscription<std_msgs::msg::Bool>(
         "/" + robotNamespace_ + "/kill", qos,

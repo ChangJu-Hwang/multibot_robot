@@ -71,6 +71,7 @@ namespace Robot
         void setModeState(PanelUtil::Mode _mode_state) { mode_state_ = _mode_state; }
         void setVelocity(double _lin_vel, double _ang_vel);
         void set_pushButton_Connect_clicked();
+        void set_pushButton_Manual_clicked();
 
         void setRobotName(const std::string _robotName);
 
