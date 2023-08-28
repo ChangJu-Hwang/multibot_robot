@@ -143,7 +143,7 @@ bool MultibotRobot::request_connection()
         return;
     };
 
-    auto future_result = 
+    auto future_result =
         connection_->async_send_request(request, response_received_callback);
 
     return future_result.get()->is_connected;
@@ -164,33 +164,80 @@ bool MultibotRobot::request_disconnection()
     auto request = std::make_shared<Disconnection::Request>();
 
     request->name = robot_.name_;
-    
+
     auto response_received_callback = [this](rclcpp::Client<Disconnection>::SharedFuture _future)
     {
         auto response = _future.get();
         return;
     };
 
-    auto future_result = 
+    auto future_result =
         disconnection_->async_send_request(request, response_received_callback);
 
     return future_result.get()->is_disconnected;
 }
 
-void MultibotRobot::saveRobotInfo(
-    const std::shared_ptr<RobotInfo::Request> _request,
-    std::shared_ptr<RobotInfo::Response> _response)
+bool MultibotRobot::request_modeChange(bool _is_remote)
 {
-    robot_.name_ = _request->config.name;
-    robot_.wheel_radius_ = _request->config.wheel_radius;
-    robot_.wheel_seperation_ = _request->config.wheel_seperation;
+    while (!modeFromRobot_->wait_for_service(1s))
+    {
+        if (!rclcpp::ok())
+        {
+            RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the service.");
+            return false;
+        }
+        RCLCPP_ERROR(this->get_logger(), "ModeChange not available, waiting again...");
+    }
 
-    robot_.max_linVel_ = _request->config.max_linvel;
-    robot_.max_linAcc_ = _request->config.max_linacc;
-    robot_.max_angVel_ = _request->config.max_angvel;
-    robot_.max_angAcc_ = _request->config.max_angacc;
+    auto request = std::make_shared<ModeSelection::Request>();
 
-    _response->registration_status = true;
+    request->name = robot_.name_;
+    request->is_remote = _is_remote;
+
+    auto response_received_callback = [this](rclcpp::Client<ModeSelection>::SharedFuture _future)
+    {
+        auto response = _future.get();
+        return;
+    };
+
+    auto future_result = 
+        modeFromRobot_->async_send_request(request, response_received_callback);
+
+    return future_result.get()->is_complete;
+}
+
+void MultibotRobot::change_robot_mode(
+    const std::shared_ptr<ModeSelection::Request> _request,
+    std::shared_ptr<ModeSelection::Response> _response)
+{
+    if (_request->name != robot_.name_)
+        abort();
+    
+    if (_request->is_remote == true)
+        robotPanel_->setModeState(PanelUtil::Mode::REMOTE);
+    else
+    {
+        robotPanel_->setModeState(PanelUtil::Mode::MANUAL);
+        robotPanel_->setVelocity(0.0, 0.0);
+    }
+    
+    _response->is_complete = true;
+}
+
+void MultibotRobot::respond_to_serverScan(const std_msgs::msg::Bool::SharedPtr _msg)
+{
+    if (_msg->data == false)
+        return;
+
+    robotPanel_->set_pushButton_Connect_clicked();
+}
+
+void MultibotRobot::respond_to_kill(const std_msgs::msg::Bool::SharedPtr _msg)
+{
+    if (_msg->data == false)
+        return;
+    
+    robotPanel_->setConnectionState(false);
 }
 
 void MultibotRobot::receivePath(
@@ -236,11 +283,13 @@ void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom
 
     robot_.pose_.component_.theta = yaw;
 
-    if (robotPanel_->getMode() == PanelUtil::Mode::REMOTE)
+    robot_.linVel_ = _odom_msg->twist.twist.linear.x;
+    robot_.angVel_ = _odom_msg->twist.twist.angular.z;
+
+    if (not(robotPanel_->getModeState() == PanelUtil::Mode::MANUAL))
     {
         robotPanel_->setVelocity(
-            _odom_msg->twist.twist.linear.x,
-            _odom_msg->twist.twist.angular.z);
+            robot_.linVel_, robot_.angVel_);
     }
 }
 
@@ -256,6 +305,8 @@ void MultibotRobot::report_state()
 
     robotStateMsg.name = robot_.name_;
     robotStateMsg.pose = robot_.pose_.component_;
+    robotStateMsg.lin_vel = robot_.linVel_;
+    robotStateMsg.ang_vel = robot_.angVel_;
 
     robotState_pub_->publish(robotStateMsg);
 }
@@ -267,7 +318,7 @@ void MultibotRobot::control()
     geometry_msgs::msg::Twist cmd_vel;
 
     if (is_pannel_running_ == true and
-        robotPanel_->getMode() == PanelUtil::MANUAL)
+        robotPanel_->getModeState() == PanelUtil::MANUAL)
     {
         cmd_vel_pub_->publish(robotPanel_->get_cmd_vel());
         return;
@@ -275,7 +326,6 @@ void MultibotRobot::control()
 
     if (not(is_activated_))
     {
-        cmd_vel_pub_->publish(cmd_vel);
         return;
     }
 
@@ -409,7 +459,30 @@ void MultibotRobot::update(const PanelUtil::Msg &_msg)
         robotPanel_->setConnectionState(not(is_disconnected));
         break;
     }
-        
+    
+    case PanelUtil::Request::MANUAL_REQUEST:
+    {
+        bool is_complete = request_modeChange(false);
+
+        if (is_complete)
+        {
+            robotPanel_->setModeState(PanelUtil::Mode::MANUAL);
+            robotPanel_->setVelocity(0.0, 0.0);
+        }
+
+        break;
+    }
+
+    case PanelUtil::Request::REMOTE_REQUEST:
+    {
+        bool is_complete = request_modeChange(true);
+
+        if (is_complete)
+            robotPanel_->setModeState(PanelUtil::Mode::REMOTE);
+
+        break;
+    }
+
     default:
         break;
     }
@@ -426,9 +499,18 @@ MultibotRobot::MultibotRobot()
     connection_ = this->create_client<Connection>("/connection");
     disconnection_ = this->create_client<Disconnection>("/disconnection");
 
-    registration_ = this->create_service<RobotInfo>(
-        "/" + robotNamespace_ + "/info",
-        std::bind(&MultibotRobot::saveRobotInfo, this, std::placeholders::_1, std::placeholders::_2));
+    serverScan_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/server_scan", qos, std::bind(&MultibotRobot::respond_to_serverScan, this, std::placeholders::_1));
+
+    killRobot_ = this->create_subscription<std_msgs::msg::Bool>(
+        "/" + robotNamespace_ + "/kill", qos,
+        std::bind(&MultibotRobot::respond_to_kill, this, std::placeholders::_1));
+
+    modeFromServer_ = this->create_service<ModeSelection>(
+        "/" + robotNamespace_ + "/modeFromServer",
+        std::bind(&MultibotRobot::change_robot_mode, this, std::placeholders::_1, std::placeholders::_2));
+
+    modeFromRobot_ = this->create_client<ModeSelection>("/" + robotNamespace_ + "/modeFromRobot");
 
     control_command_ = this->create_service<Path>(
         "/" + robotNamespace_ + "/path",

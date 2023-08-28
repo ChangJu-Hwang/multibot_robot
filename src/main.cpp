@@ -3,8 +3,6 @@
 #include <future>
 #include <thread>
 
-#include <QApplication>
-
 #include "multibot_robot/robot.hpp"
 #include "multibot_robot/robot_panel.hpp"
 

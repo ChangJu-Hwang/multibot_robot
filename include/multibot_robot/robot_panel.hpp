@@ -20,13 +20,16 @@ namespace PanelUtil
     {
         NO_REQUEST,
         CONNECTION_REQUEST,
-        DISCONNECTION_REQUEST
+        DISCONNECTION_REQUEST,
+        REMOTE_REQUEST,
+        MANUAL_REQUEST
     }; // enum Request
 
     enum Mode
     {
         REMOTE,
-        MANUAL
+        MANUAL,
+        AUTO
     }; // enum Mode
 
     typedef std::pair<Request, Mode> Msg;
@@ -67,10 +70,12 @@ namespace Robot
         void setConnectionState(bool _connection_state) { connection_state_ = _connection_state; }
         void setModeState(PanelUtil::Mode _mode_state) { mode_state_ = _mode_state; }
         void setVelocity(double _lin_vel, double _ang_vel);
+        void set_pushButton_Connect_clicked();
 
         void setRobotName(const std::string _robotName);
 
-        PanelUtil::Mode getMode() { return mode_state_; }
+        PanelUtil::Mode getModeState() { return mode_state_; }
+        bool getConnectionState() { return connection_state_; }
         geometry_msgs::msg::Twist get_cmd_vel();
 
     private:

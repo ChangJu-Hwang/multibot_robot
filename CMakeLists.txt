@@ -38,6 +38,7 @@ find_package(nav_msgs REQUIRED)
 
 find_package(gazebo_ros REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+
 ################################################################################
 # Build
 ################################################################################
@@ -49,6 +50,7 @@ include_directories(
 set(ROBOT_DEPENDENCIES
   "rclcpp"
   "geometry_msgs"
+  "std_msgs"
   "nav_msgs"
   "multibot_ros2_interface"
   "multibot_util"
@@ -60,7 +62,6 @@ set(PANEL_SOURCES "include/multibot_robot/robot_panel.hpp")
 set(ROBOT_EXEC_NAME "robot")
 file(GLOB ROBOT_SOURCES "src/*.cpp")
 add_executable(${ROBOT_EXEC_NAME} ${ROBOT_SOURCES} ${PANEL_SOURCES})
-# add_executable(${ROBOT_EXEC_NAME} ${ROBOT_SOURCES})
 
 target_link_libraries(${ROBOT_EXEC_NAME} Qt5::Widgets)
 ament_target_dependencies(${ROBOT_EXEC_NAME} ${ROBOT_DEPENDENCIES})

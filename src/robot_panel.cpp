@@ -61,6 +61,11 @@ void Robot::Panel::modeDisp()
         ui_->label_Mode_State->setStyleSheet(
             "color: rgb(255,190,11);\nborder: none");
         break;
+    
+    case PanelUtil::Mode::AUTO:
+        ui_->label_Mode_State->setText("Auto");
+        ui_->label_Mode_State->setStyleSheet(
+            "color: rgb(230, 19, 237);\nborder: none");
 
     default:
         break;
@@ -90,17 +95,15 @@ void Robot::Panel::on_pushButton_Disconnect_clicked()
 
 void Robot::Panel::on_pushButton_Remote_clicked()
 {
-    mode_state_ = PanelUtil::Mode::REMOTE;
+    msg_.first = PanelUtil::Request::REMOTE_REQUEST;
+
+    notify();
 }
 
 void Robot::Panel::on_pushButton_Manual_clicked()
 {
-    mode_state_ = PanelUtil::Mode::MANUAL;
+    msg_.first = PanelUtil::Request::MANUAL_REQUEST;
 
-    lin_vel_ = 0.0;
-    ang_vel_ = 0.0;
-
-    pubManualMsg();
     notify();
 }
 
@@ -146,6 +149,11 @@ void Robot::Panel::setVelocity(double _lin_vel, double _ang_vel)
 {
     lin_vel_ = _lin_vel;
     ang_vel_ = _ang_vel;
+}
+
+void Robot::Panel::set_pushButton_Connect_clicked()
+{
+    ui_->pushButton_Connect->clicked(true);
 }
 
 void Robot::Panel::setRobotName(const std::string _robotName)
