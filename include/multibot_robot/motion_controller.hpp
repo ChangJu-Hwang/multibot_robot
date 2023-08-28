@@ -8,11 +8,15 @@ using namespace MAPF_Util;
 
 namespace Motion
 {
-    double VelocityComputer(
+        double DisplacementComputer(
             const double _max_s, const double _max_vel, const double _max_acc,
             const double _time);
 
-    double TotalMoveTimeComputer(
+        double VelocityComputer(
+            const double _max_s, const double _max_vel, const double _max_acc,
+            const double _time);
+
+        double TotalMoveTimeComputer(
             const double _max_s, const double _max_vel, const double _max_acc);
 
 } // namespace Motion

@@ -1,0 +1,13 @@
+/**:
+  ros__parameters:
+    name: 'Robot2'
+    type: 'ISR_M2'
+    goal:
+      x: 13.2
+      y: 3.5
+      theta: -1.5707963267
+    # Optional: Gazebo Initial Spwan Pose
+    spawn:
+      x: 14.5
+      y: 8.0
+      theta: 0.0

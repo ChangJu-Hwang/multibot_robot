@@ -29,13 +29,16 @@ def generate_launch_description():
     # Robot Node
     multibot_robot_cmd = Node(
         package='multibot_robot',
-        namespace='robot_namespace',
+        namespace=LaunchConfiguration('robot_namespace'),
         executable='robot',
         name='robot',
         parameters=[{
             'namespace': LaunchConfiguration('robot_namespace'),
             'linear_tolerance': LaunchConfiguration('linear_tolerance'),
-            'angular_tolerance': LaunchConfiguration('angular_tolerance')
+            'angular_tolerance': LaunchConfiguration('angular_tolerance'),
+            'Kx': LaunchConfiguration('Kx'),
+            'Ky': LaunchConfiguration('Ky'),
+            'Ktheta': LaunchConfiguration('Ktheta')
         }],
         output='screen'
     )

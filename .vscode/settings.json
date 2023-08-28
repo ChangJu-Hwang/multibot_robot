@@ -82,6 +82,13 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "bit": "cpp"
+        "bit": "cpp",
+        "multibot_ros2_interface": "cpp",
+        "qtwidgets": "cpp",
+        "qtimer": "cpp",
+        "*.ui": "xml",
+        "qwidget": "cpp",
+        "codecvt": "cpp",
+        "filesystem": "cpp"
     }
 }
