@@ -200,7 +200,7 @@ bool MultibotRobot::request_modeChange(bool _is_remote)
         return;
     };
 
-    auto future_result = 
+    auto future_result =
         modeFromRobot_->async_send_request(request, response_received_callback);
 
     return future_result.get()->is_complete;
@@ -212,7 +212,7 @@ void MultibotRobot::change_robot_mode(
 {
     if (_request->name != robot_.name_)
         abort();
-    
+
     if (_request->is_remote == true)
         robotPanel_->setModeState(PanelUtil::Mode::REMOTE);
     else
@@ -220,7 +220,7 @@ void MultibotRobot::change_robot_mode(
         robotPanel_->setModeState(PanelUtil::Mode::MANUAL);
         robotPanel_->setVelocity(0.0, 0.0);
     }
-    
+
     _response->is_complete = true;
 }
 
@@ -236,8 +236,10 @@ void MultibotRobot::respond_to_kill(const std_msgs::msg::Bool::SharedPtr _msg)
 {
     if (_msg->data == false)
         return;
-    
+
     robotPanel_->setConnectionState(false);
+    robotPanel_->setModeState(PanelUtil::MANUAL);
+    robotPanel_->setVelocity(0.0, 0.0);
 }
 
 void MultibotRobot::receivePath(
@@ -457,11 +459,20 @@ void MultibotRobot::update(const PanelUtil::Msg &_msg)
     {
         bool is_disconnected = request_disconnection();
         robotPanel_->setConnectionState(not(is_disconnected));
+        if (is_disconnected)
+        {
+            robotPanel_->setModeState(PanelUtil::Mode::MANUAL);
+            robotPanel_->setVelocity(0.0, 0.0);
+        }
+
         break;
     }
-    
+
     case PanelUtil::Request::MANUAL_REQUEST:
     {
+        if (robotPanel_->getConnectionState() == false)
+            break;
+
         bool is_complete = request_modeChange(false);
 
         if (is_complete)
@@ -475,6 +486,9 @@ void MultibotRobot::update(const PanelUtil::Msg &_msg)
 
     case PanelUtil::Request::REMOTE_REQUEST:
     {
+        if (robotPanel_->getConnectionState() == false)
+            break;
+
         bool is_complete = request_modeChange(true);
 
         if (is_complete)
