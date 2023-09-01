@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/static_transform_broadcaster.h>
 #include <std_msgs/msg/bool.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -73,6 +74,7 @@ namespace Robot
             std::shared_ptr<Path::Response> _response);
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg);
+        void tf_broadcast();
 
         void publish_topics();
         void report_state();
@@ -94,6 +96,7 @@ namespace Robot
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
 
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+        std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_;
 
     private:
         Position::Pose PoseComputer(

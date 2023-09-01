@@ -34,6 +34,8 @@ find_package(multibot_ros2_interface REQUIRED)
 find_package(multibot_util REQUIRED)
 
 find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(nav_msgs REQUIRED)
 
 find_package(gazebo_ros REQUIRED)
@@ -50,6 +52,8 @@ include_directories(
 set(ROBOT_DEPENDENCIES
   "rclcpp"
   "geometry_msgs"
+  "tf2"
+  "tf2_ros"
   "std_msgs"
   "nav_msgs"
   "multibot_ros2_interface"
@@ -83,8 +87,10 @@ install(TARGETS
 install(DIRECTORY
   launch
   models
-  ui
+  params
   robot
+  rviz
+  ui
   DESTINATION share/${PROJECT_NAME}
 )
 

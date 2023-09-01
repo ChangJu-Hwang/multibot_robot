@@ -177,56 +177,57 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-              <uri>model://hokuyo/meshes/hokuyo.dae</uri>
+            <uri>model://hokuyo/meshes/hokuyo.dae</uri>
           </mesh>
         </geometry>
       </visual>
 
       <collision name='collision-base'>
-          <geometry>
-            <box>
-              <size>0.05 0.05 0.041</size>
-            </box>
-          </geometry>
-        </collision>
+        <geometry>
+          <box>
+            <size>0.05 0.05 0.041</size>
+          </box>
+        </geometry>
+      </collision>
 
-        <collision name='collision-top'>
-          <geometry>
-            <cylinder>
-              <radius>0.021</radius>
-              <length>0.029</length>
-            </cylinder>
-          </geometry>
-        </collision>
+      <collision name='collision-top'>
+        <geometry>
+          <cylinder>
+            <radius>0.021</radius>
+            <length>0.029</length>
+          </cylinder>
+        </geometry>
+      </collision>
 
-        <sensor name='laser' type='ray'>
-          <always_on>true</always_on>
-          <visualize>true</visualize>
-          <pose>0 0 0 0 0 0</pose>
-          <update_rate>10</update_rate>
-          <ray>
-            <scan>
-              <horizontal>
-                <samples>640</samples>
-                <resolution>1</resolution>
-                <min_angle>-2.26889</min_angle>
-                <max_angle>2.2689</max_angle>
-              </horizontal>
-            </scan>
-            <range>
-              <min>0.08</min>
-              <max>10</max>
-              <resolution>0.01</resolution>
-            </range>
-          </ray>
-          <plugin name='laserscan' filename='libgazebo_ros_ray_sensor.so'>
-            <ros>
-              <remapping>~/out:=scan</remapping>
-            </ros>
-            <output_type>sensor_msgs/LaserScan</output_type>
-            <frame_name>Robot1/hokuyo</frame_name>
-          </plugin>
-        </sensor>
+      <sensor name='laser' type='ray'>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <pose>0 0 0 0 0 0</pose>
+        <update_rate>10</update_rate>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>640</samples>
+              <resolution>1</resolution>
+              <min_angle>-2.26889</min_angle>
+              <max_angle>2.2689</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.08</min>
+            <max>10</max>
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+        <plugin name='laserscan' filename='libgazebo_ros_ray_sensor.so'>
+          <ros>
+            <remapping>~/out:=scan</remapping>
+          </ros>
+          <output_type>sensor_msgs/LaserScan</output_type>
+          <!-- Manual -->
+          <frame_name>Robot1/hokuyo</frame_name>
+        </plugin>
+      </sensor>
     </link>
 
     <joint name="base_joint" type="fixed">
@@ -293,8 +294,9 @@
       <publish_wheel_tf>false</publish_wheel_tf>
 
       <odometry_topic>odom</odometry_topic>
-      <odometry_frame>odom</odometry_frame>
-      <robot_base_frame>base_footprint</robot_base_frame>
+      <!-- Manual -->
+      <odometry_frame>Robot1/odom</odometry_frame>
+      <robot_base_frame>Robot1/base_footprint</robot_base_frame>
 
     </plugin>
 
@@ -302,8 +304,8 @@
       <ros>
         <remapping>~/out:=joint_states</remapping>
       </ros>
-      <joint_name>left_wheel_joint</joint_name>
-      <joint_name>right_wheel_joint</joint_name>
+      <joint_name>Robot1/left_wheel_joint</joint_name>
+      <joint_name>Robot1/right_wheel_joint</joint_name>
     </plugin>
 
   </model>

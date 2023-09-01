@@ -236,7 +236,7 @@ void MultibotRobot::respond_to_emergencyStop(const std_msgs::msg::Bool::SharedPt
 {
     if (_msg->data == false)
         return;
-    
+
     robotPanel_->set_pushButton_Manual_clicked();
 }
 
@@ -303,10 +303,32 @@ void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom
     }
 }
 
+void MultibotRobot::tf_broadcast()
+{
+    geometry_msgs::msg::TransformStamped t;
+
+    t.header.frame_id = "map";
+    t.child_frame_id = robot_.name_ + "/odom";
+
+    t.transform.translation.x = robot_.pose_.component_.x;
+    t.transform.translation.y = robot_.pose_.component_.y;
+    t.transform.translation.z = 0.0;
+
+    tf2::Quaternion q;
+    q.setRPY(0, 0, robot_.pose_.component_.theta);
+    t.transform.rotation.x = q.x();
+    t.transform.rotation.y = q.y();
+    t.transform.rotation.z = q.z();
+    t.transform.rotation.w = q.w();
+
+    tf_broadcaster_->sendTransform(t);
+}
+
 void MultibotRobot::publish_topics()
 {
     report_state();
     control();
+    tf_broadcast();
 }
 
 void MultibotRobot::report_state()
@@ -334,7 +356,7 @@ void MultibotRobot::control()
         return;
     }
 
-    if (is_pannel_running_ == true and 
+    if (is_pannel_running_ == true and
         robotPanel_->getModeState() == PanelUtil::REMOTE)
     {
         return;
@@ -553,6 +575,8 @@ MultibotRobot::MultibotRobot()
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/" + robotNamespace_ + "/odom", qos,
         std::bind(&MultibotRobot::odom_callback, this, std::placeholders::_1));
+
+    tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
 
     robotState_pub_ = this->create_publisher<RobotState>("/" + robotNamespace_ + "/state", qos);
     cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/" + robotNamespace_ + "/cmd_vel", qos);
