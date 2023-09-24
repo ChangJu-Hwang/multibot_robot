@@ -60,7 +60,7 @@ void MultibotRobot::init(std::chrono::milliseconds _timeStep)
     this->declare_parameter("linear_tolerance");
     this->declare_parameter("angular_tolerance");
 
-    robotNamespace_ = this->get_parameter("name").as_string();
+    this->get_parameter_or("name", robotNamespace_, std::string("ISR_M2"));
     this->get_parameter_or("linear_tolerance", linear_tolerance_, 0.10);
     this->get_parameter_or("angular_tolerance", angular_tolerance_, 0.018);
 
@@ -75,8 +75,8 @@ void MultibotRobot::loadRobotInfo()
 {
     this->declare_parameter("type");
 
-    robot_.name_ = this->get_parameter("name").as_string();
-    robot_.type_ = this->get_parameter("type").as_string();
+    this->get_parameter_or("name", robot_.name_, std::string("ISR_M2"));
+    this->get_parameter_or("type", robot_.type_, std::string("ISR_M2"));
 
     if (is_pannel_running_)
         robotPanel_->setRobotName(robot_.name_);
@@ -279,8 +279,8 @@ void MultibotRobot::receivePath(
 
 void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg)
 {
-    robot_.pose_.component_.x = _odom_msg->pose.pose.position.x;
-    robot_.pose_.component_.y = _odom_msg->pose.pose.position.y;
+    // robot_.pose_.component_.x = _odom_msg->pose.pose.position.x;
+    // robot_.pose_.component_.y = _odom_msg->pose.pose.position.y;
 
     tf2::Quaternion q(
         _odom_msg->pose.pose.orientation.x,
@@ -291,44 +291,24 @@ void MultibotRobot::odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
 
-    robot_.pose_.component_.theta = yaw;
+    // robot_.pose_.component_.theta = yaw;
 
     robot_.linVel_ = _odom_msg->twist.twist.linear.x;
     robot_.angVel_ = _odom_msg->twist.twist.angular.z;
 
-    if (not(robotPanel_->getModeState() == PanelUtil::Mode::MANUAL))
+    if (is_pannel_running_ and
+        not(robotPanel_->getModeState() == PanelUtil::Mode::MANUAL))
     {
         robotPanel_->setVelocity(
             robot_.linVel_, robot_.angVel_);
     }
 }
 
-void MultibotRobot::tf_broadcast()
-{
-    geometry_msgs::msg::TransformStamped t;
-
-    t.header.frame_id = "map";
-    t.child_frame_id = robot_.name_ + "/odom";
-
-    t.transform.translation.x = robot_.pose_.component_.x;
-    t.transform.translation.y = robot_.pose_.component_.y;
-    t.transform.translation.z = 0.0;
-
-    tf2::Quaternion q;
-    q.setRPY(0, 0, robot_.pose_.component_.theta);
-    t.transform.rotation.x = q.x();
-    t.transform.rotation.y = q.y();
-    t.transform.rotation.z = q.z();
-    t.transform.rotation.w = q.w();
-
-    tf_broadcaster_->sendTransform(t);
-}
-
 void MultibotRobot::publish_topics()
 {
     report_state();
     control();
-    tf_broadcast();
+    robotPoseCalculate();
 }
 
 void MultibotRobot::report_state()
@@ -341,6 +321,35 @@ void MultibotRobot::report_state()
     robotStateMsg.ang_vel = robot_.angVel_;
 
     robotState_pub_->publish(robotStateMsg);
+}
+
+void MultibotRobot::robotPoseCalculate()
+{
+    geometry_msgs::msg::TransformStamped geoTr;
+
+    try
+    {
+        geoTr = tf_buffer_->lookupTransform(
+            "map", (robot_.name_ + "/base_link"), tf2::TimePointZero);
+    }
+    catch (const tf2::TransformException &ex)
+    {
+        return;
+    }
+
+    tf2::Quaternion q(
+        geoTr.transform.rotation.x,
+        geoTr.transform.rotation.y,
+        geoTr.transform.rotation.z,
+        geoTr.transform.rotation.w);
+    tf2::Matrix3x3 m(q);
+
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+    robot_.pose_.component_.x = geoTr.transform.translation.x;
+    robot_.pose_.component_.y = geoTr.transform.translation.y;
+    robot_.pose_.component_.theta = yaw;
 }
 
 // Kanayama Contoller
@@ -436,11 +445,12 @@ Position::Pose MultibotRobot::PoseComputer(
     }
     catch (double _wrong_time)
     {
-        std::cerr << "[Error] MultibotRobot::PoseComputer(): "
-                  << "Out of range(Time): " << _wrong_time << " / "
-                  << "Valid range: " << _pathSegment.departure_time_
-                  << " ~ " << _pathSegment.arrival_time_ << std::endl;
-        std::abort();
+        return _pathSegment.start_;
+        // std::cerr << "[Error] MultibotRobot::PoseComputer(): "
+        //           << "Out of range(Time): " << _wrong_time << " / "
+        //           << "Valid range: " << _pathSegment.departure_time_
+        //           << " ~ " << _pathSegment.arrival_time_ << std::endl;
+        // std::abort();
     }
 
     if (_time > _pathSegment.arrival_time_ + 1e-8)
@@ -549,6 +559,9 @@ MultibotRobot::MultibotRobot()
 
     init(timeStep);
 
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
     connection_ = this->create_client<Connection>("/connection");
     disconnection_ = this->create_client<Disconnection>("/disconnection");
 
@@ -575,8 +588,6 @@ MultibotRobot::MultibotRobot()
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/" + robotNamespace_ + "/odom", qos,
         std::bind(&MultibotRobot::odom_callback, this, std::placeholders::_1));
-
-    tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(*this);
 
     robotState_pub_ = this->create_publisher<RobotState>("/" + robotNamespace_ + "/state", qos);
     cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/" + robotNamespace_ + "/cmd_vel", qos);

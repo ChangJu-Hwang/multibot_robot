@@ -3,7 +3,7 @@
     name: 'Robot1'
     type: 'ISR_M2'
     goal:
-      x: 14.6
+      x: 15.6
       y: 6.3
       theta: 0.0
     # Optional: Gazebo Initial Spwan Pose

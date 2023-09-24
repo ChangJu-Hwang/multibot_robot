@@ -37,8 +37,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
-find_package(gazebo_ros REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
 ################################################################################
@@ -56,6 +56,7 @@ set(ROBOT_DEPENDENCIES
   "tf2_ros"
   "std_msgs"
   "nav_msgs"
+  "sensor_msgs"
   "multibot_ros2_interface"
   "multibot_util"
   "Qt5"
@@ -85,8 +86,8 @@ install(TARGETS
 )
 
 install(DIRECTORY
+  config
   launch
-  models
   params
   robot
   rviz
@@ -94,10 +95,7 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/multibot_robot.dsv.in")
-
 ament_export_dependencies(ament_cmake)
-ament_export_dependencies(gazebo_ros)
 ament_export_dependencies(Qt5)
 
 ################################################################################

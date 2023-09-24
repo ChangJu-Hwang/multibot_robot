@@ -4,10 +4,12 @@
 #include <tuple>
 
 #include <rclcpp/rclcpp.hpp>
-#include <tf2_ros/static_transform_broadcaster.h>
 #include <std_msgs/msg/bool.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 #include "multibot_util/Instance.hpp"
 #include "multibot_robot/motion_controller.hpp"
@@ -74,7 +76,7 @@ namespace Robot
             std::shared_ptr<Path::Response> _response);
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg);
-        void tf_broadcast();
+        void robotPoseCalculate();
 
         void publish_topics();
         void report_state();
@@ -96,7 +98,9 @@ namespace Robot
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
 
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-        std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_broadcaster_;
+
+        std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
+        std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
 
     private:
         Position::Pose PoseComputer(
@@ -108,6 +112,8 @@ namespace Robot
 
     private:
         AgentInstance::Agent robot_;
+
+        geometry_msgs::msg::PoseStamped::SharedPtr last_amcl_pose_;
 
         std::vector<PathSegment> path_;
         int localPathIdx_;
