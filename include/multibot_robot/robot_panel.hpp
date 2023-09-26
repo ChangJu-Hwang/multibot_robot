@@ -1,39 +1,20 @@
 #pragma once
 
-#include <list>
-
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 
 #include <QWidget>
 #include <QTimer>
 #include <QKeyEvent>
 
-#include "multibot_util/Interface/Observer_Interface.hpp"
 #include "multibot_util/Instance.hpp"
 #include "multibot_robot/ui_robot_panel.h"
 
+#include "multibot_util/Panel_Util.hpp"
+
 using namespace Instance;
-
-namespace PanelUtil
-{
-    enum Request
-    {
-        NO_REQUEST,
-        CONNECTION_REQUEST,
-        DISCONNECTION_REQUEST,
-        REMOTE_REQUEST,
-        MANUAL_REQUEST
-    }; // enum Request
-
-    enum Mode
-    {
-        REMOTE,
-        MANUAL,
-        AUTO
-    }; // enum Mode
-
-    typedef std::pair<Request, Mode> Msg;
-} // namespace PanelUtil
+using namespace PanelUtil;
 
 namespace Ui
 {
@@ -42,15 +23,10 @@ namespace Ui
 
 namespace Robot
 {
-    class Panel : public QWidget, public Observer::SubjectInterface<PanelUtil::Msg>
+    class Panel : public QWidget
     {
     private:
         Q_OBJECT
-
-    public:
-        void attach(Observer::ObserverInterface<PanelUtil::Msg> &_observer) override;
-        void detach(Observer::ObserverInterface<PanelUtil::Msg> &_observer) override;
-        void notify() override;
 
     private slots:
         void connectionDisp();
@@ -68,36 +44,64 @@ namespace Robot
 
     public:
         void setConnectionState(bool _connection_state) { connection_state_ = _connection_state; }
-        void setModeState(PanelUtil::Mode _mode_state) { mode_state_ = _mode_state; }
+        void setModeState(Mode _mode_state) { mode_state_ = _mode_state; }
         void setVelocity(double _lin_vel, double _ang_vel);
         void set_pushButton_Connect_clicked();
         void set_pushButton_Manual_clicked();
 
-        void setRobotName(const std::string _robotName);
-
-        PanelUtil::Mode getModeState() { return mode_state_; }
+        Mode getModeState() { return mode_state_; }
         bool getConnectionState() { return connection_state_; }
         geometry_msgs::msg::Twist get_cmd_vel();
-
-    private:
-        void pubManualMsg();
-
+    
     private:
         Ui::RobotPanel *ui_;
         QTimer *displayTimer_;
 
     private:
-        bool connection_state_;
-        PanelUtil::Mode mode_state_;
+        bool request_connection();
+        bool request_disconnection();
+        bool request_modeChange(Mode _mode);
 
-        PanelUtil::Msg msg_;
+        void respond_to_serverScan(const std_msgs::msg::Bool::SharedPtr _msg);
+        void respond_to_kill(const std_msgs::msg::Bool::SharedPtr _msg);
+        void change_robot_mode(
+            const std::shared_ptr<ModeSelection::Request> _request,
+            std::shared_ptr<ModeSelection::Response> _response);
+
+        void respond_to_emergencyStop(const std_msgs::msg::Bool::SharedPtr _msg);
+
+        void manual_control();
+    
+    private:
+        std::shared_ptr<rclcpp::Node> nh_;
+        rclcpp::TimerBase::SharedPtr update_timer_;
+
+        rclcpp::Client<Connection>::SharedPtr connection_;
+        rclcpp::Client<Disconnection>::SharedPtr disconnection_;
+        rclcpp::Client<ModeSelection>::SharedPtr modeFromRobot_;
+
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr serverScan_;
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr killRobot_;
+        rclcpp::Service<ModeSelection>::SharedPtr modeFromServer_;
+        
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr emergencyStop_;
+
+        rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr manual_cmd_vel_pub_;
+
+    private:
+        AgentInstance::Agent robot_;
+
+        bool connection_state_;
+        Mode mode_state_;
+
         double lin_vel_;
         double ang_vel_;
 
-        std::list<Observer::ObserverInterface<PanelUtil::Msg> *> list_observer_;
-
     public:
-        explicit Panel(QWidget *_parent = nullptr);
+        Panel(
+            std::shared_ptr<rclcpp::Node> &_nh,
+            const AgentInstance::Agent &_robot,
+            QWidget *_parent = nullptr);
         ~Panel();
     }; // class Panel
 } // namespace Robot

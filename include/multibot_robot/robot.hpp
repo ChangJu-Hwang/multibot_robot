@@ -4,7 +4,6 @@
 #include <tuple>
 
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/bool.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -15,23 +14,17 @@
 #include "multibot_robot/motion_controller.hpp"
 #include "multibot_robot/robot_panel.hpp"
 
-#include "multibot_ros2_interface/srv/connection.hpp"
-#include "multibot_ros2_interface/srv/disconnection.hpp"
 #include "multibot_ros2_interface/msg/robot_state.hpp"
-#include "multibot_ros2_interface/srv/mode_selection.hpp"
 #include "multibot_ros2_interface/srv/path.hpp"
 
 using namespace Instance;
 
 namespace Robot
 {
-    class MultibotRobot : public rclcpp::Node, public Observer::ObserverInterface<PanelUtil::Msg>
+    class MultibotRobot : public rclcpp::Node
     {
     private:
-        using Connection = multibot_ros2_interface::srv::Connection;
-        using Disconnection = multibot_ros2_interface::srv::Disconnection;
         using RobotState = multibot_ros2_interface::msg::RobotState;
-        using ModeSelection = multibot_ros2_interface::srv::ModeSelection;
         using LocalPath = multibot_ros2_interface::msg::LocalPath;
         using Path = multibot_ros2_interface::srv::Path;
 
@@ -61,16 +54,6 @@ namespace Robot
 
         void loadRobotInfo();
 
-        bool request_connection();
-        bool request_disconnection();
-        bool request_modeChange(bool _is_remote);
-        void change_robot_mode(
-            const std::shared_ptr<ModeSelection::Request> _request,
-            std::shared_ptr<ModeSelection::Response> _response);
-        void respond_to_serverScan(const std_msgs::msg::Bool::SharedPtr _msg);
-        void respond_to_emergencyStop(const std_msgs::msg::Bool::SharedPtr _msg);
-        void respond_to_kill(const std_msgs::msg::Bool::SharedPtr _msg);
-
         void receivePath(
             const std::shared_ptr<Path::Request> _request,
             std::shared_ptr<Path::Response> _response);
@@ -83,15 +66,8 @@ namespace Robot
         void control();
 
     private:
+        std::shared_ptr<rclcpp::Node> nh_;
         rclcpp::TimerBase::SharedPtr update_timer_;
-
-        rclcpp::Client<Connection>::SharedPtr connection_;
-        rclcpp::Client<Disconnection>::SharedPtr disconnection_;
-        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr serverScan_;
-        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr emergencyStop_;
-        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr killRobot_;
-        rclcpp::Service<ModeSelection>::SharedPtr modeFromServer_;
-        rclcpp::Client<ModeSelection>::SharedPtr modeFromRobot_;
 
         rclcpp::Service<Path>::SharedPtr control_command_;
         rclcpp::Publisher<RobotState>::SharedPtr robotState_pub_;
@@ -106,9 +82,6 @@ namespace Robot
         Position::Pose PoseComputer(
             const PathSegment _pathSegment,
             const double _time);
-
-    public:
-        void update(const PanelUtil::Msg &_msg) override;
 
     private:
         AgentInstance::Agent robot_;

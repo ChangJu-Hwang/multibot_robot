@@ -30,9 +30,11 @@ def generate_launch_description():
                                                    'isr_m2_fake_node_launch.py')),
         launch_arguments={
             'robot_name': robot_params['name'],
+            'robot_type': robot_params['type'],
+            'robot_config': os.path.join(multibot_robot_dir, 'robot', 'robotConfig.yaml'),
             'frame_prefix': robot_params['name'] + '/',
-            'odom_frame': robot_params['name'] + '/odom',
-            'base_frame': robot_params['name'] + '/base_link',
+            'odom_frame': robot_params['name'] + '/' + robotConfig_params['odometry']['frame_id'],
+            'base_frame': robot_params['name'] + '/' + robotConfig_params['odometry']['child_frame_id'],
             'x': str(robot_params['spawn']['x']),
             'y': str(robot_params['spawn']['y']),
             'Y': str(robot_params['spawn']['theta'])
