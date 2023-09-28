@@ -12,15 +12,15 @@ using namespace std::chrono_literals;
 using namespace Instance;
 using namespace Robot;
 
-using LocalPath = multibot_ros2_interface::msg::LocalPath;
+// using LocalPath = multibot_ros2_interface::msg::LocalPath;
 
-MultibotRobot::PathSegment::PathSegment(const LocalPath &_localPath)
+MultibotRobot::TrajSegment::TrajSegment(const LocalTraj &_localTraj)
 {
-    start_ = Position::Pose(_localPath.start);
-    goal_ = Position::Pose(_localPath.goal);
+    start_ = Position::Pose(_localTraj.start);
+    goal_ = Position::Pose(_localTraj.goal);
 
-    departure_time_ = _localPath.departure_time;
-    arrival_time_ = _localPath.arrival_time;
+    departure_time_ = _localTraj.departure_time;
+    arrival_time_ = _localTraj.arrival_time;
 
     Position::Coordinates start_unit_vector;
     start_unit_vector.x_ = cos(start_.component_.theta);
@@ -105,27 +105,24 @@ void MultibotRobot::loadRobotInfo()
     robot_.goal_ = goalPose;
 }
 
-void MultibotRobot::receivePath(
-    const std::shared_ptr<Path::Request> _request,
-    std::shared_ptr<Path::Response> _response)
+void MultibotRobot::receiveTraj(
+    const std::shared_ptr<Traj::Request> _request,
+    std::shared_ptr<Traj::Response> _response)
 {
     is_activated_ = true;
-    localPathIdx_ = 0;
+    localTrajIdx_ = 0;
 
     time_ = -1 * _request->start_time;
     path_.clear();
-    for (const auto &localPath : _request->path)
+    for (const auto &localTraj : _request->traj)
     {
-        PathSegment pathSegment(localPath);
-        pathSegment.rotational_duration_ = Motion::TotalMoveTimeComputer(
-            pathSegment.angle_, robot_.max_angVel_, robot_.max_angAcc_);
-        pathSegment.translational_duration_ = Motion::TotalMoveTimeComputer(
-            pathSegment.distance_, robot_.max_linVel_, robot_.max_linAcc_);
+        TrajSegment trajSegment(localTraj);
+        trajSegment.rotational_duration_ = Motion::TotalMoveTimeComputer(
+            trajSegment.angle_, robot_.max_angVel_, robot_.max_angAcc_);
+        trajSegment.translational_duration_ = Motion::TotalMoveTimeComputer(
+            trajSegment.distance_, robot_.max_linVel_, robot_.max_linAcc_);
 
-        // Todo: Delete(Just for test)
-        pathSegment.arrival_time_ = pathSegment.departure_time_ + pathSegment.rotational_duration_ + pathSegment.translational_duration_;
-
-        path_.push_back(pathSegment);
+        path_.push_back(trajSegment);
     }
 
     _response->receive_status = true;
@@ -232,10 +229,10 @@ void MultibotRobot::control()
         return;
     }
 
-    if (time_ > path_[localPathIdx_].arrival_time_ + 1e-8)
-        localPathIdx_++;
+    if (time_ > path_[localTrajIdx_].arrival_time_ + 1e-8)
+        localTrajIdx_++;
 
-    if (localPathIdx_ >= static_cast<int>(path_.size()))
+    if (localTrajIdx_ >= static_cast<int>(path_.size()))
     {
         is_activated_ = false;
         cmd_vel_pub_->publish(cmd_vel);
@@ -246,7 +243,7 @@ void MultibotRobot::control()
         return;
     }
 
-    Position::Pose reference_pose = PoseComputer(path_[localPathIdx_], time_);
+    Position::Pose reference_pose = PoseComputer(path_[localTrajIdx_], time_);
 
     Position::Coordinates cur_unit_vec = Position::Coordinates(
         cos(robot_.pose_.component_.theta), sin(robot_.pose_.component_.theta));
@@ -261,19 +258,19 @@ void MultibotRobot::control()
 
     double vRef = 0, wRef = 0;
     // Rotate
-    if (path_[localPathIdx_].rotational_duration_ + 1e-8 > time_ - path_[localPathIdx_].departure_time_)
+    if (path_[localTrajIdx_].rotational_duration_ + 1e-8 > time_ - path_[localTrajIdx_].departure_time_)
     {
-        wRef = (path_[localPathIdx_].angle_ > 0 ? 1 : -1) *
+        wRef = (path_[localTrajIdx_].angle_ > 0 ? 1 : -1) *
                Motion::VelocityComputer(
-                   path_[localPathIdx_].angle_, robot_.max_angVel_, robot_.max_angAcc_,
-                   time_ - path_[localPathIdx_].departure_time_);
+                   path_[localTrajIdx_].angle_, robot_.max_angVel_, robot_.max_angAcc_,
+                   time_ - path_[localTrajIdx_].departure_time_);
     }
     // Move
     else
     {
         vRef = Motion::VelocityComputer(
-            path_[localPathIdx_].distance_, robot_.max_linVel_, robot_.max_linAcc_,
-            time_ - path_[localPathIdx_].departure_time_ - path_[localPathIdx_].rotational_duration_);
+            path_[localTrajIdx_].distance_, robot_.max_linVel_, robot_.max_linAcc_,
+            time_ - path_[localTrajIdx_].departure_time_ - path_[localTrajIdx_].rotational_duration_);
     }
 
     cmd_vel.linear.x = vRef * cos(thetaError) + Kx_ * xError;
@@ -284,36 +281,36 @@ void MultibotRobot::control()
 }
 
 Position::Pose MultibotRobot::PoseComputer(
-    const PathSegment _pathSegment,
+    const TrajSegment _trajSegment,
     const double _time)
 {
     try
     {
-        if (_pathSegment.departure_time_ > _time + 1e-8)
+        if (_trajSegment.departure_time_ > _time + 1e-8)
             throw _time;
     }
     catch (double _wrong_time)
     {
-        return _pathSegment.start_;
+        return _trajSegment.start_;
         // std::cerr << "[Error] MultibotRobot::PoseComputer(): "
         //           << "Out of range(Time): " << _wrong_time << " / "
-        //           << "Valid range: " << _pathSegment.departure_time_
-        //           << " ~ " << _pathSegment.arrival_time_ << std::endl;
+        //           << "Valid range: " << _trajSegment.departure_time_
+        //           << " ~ " << _trajSegment.arrival_time_ << std::endl;
         // std::abort();
     }
 
-    if (_time > _pathSegment.arrival_time_ + 1e-8)
-        return _pathSegment.goal_;
+    if (_time > _trajSegment.arrival_time_ + 1e-8)
+        return _trajSegment.goal_;
 
-    Position::Pose pose = _pathSegment.start_;
+    Position::Pose pose = _trajSegment.start_;
     // Rotate
-    if (_pathSegment.rotational_duration_ + 1e-8 > _time - _pathSegment.departure_time_)
+    if (_trajSegment.rotational_duration_ + 1e-8 > _time - _trajSegment.departure_time_)
     {
         pose.component_.theta = pose.component_.theta +
-                                (_pathSegment.angle_ > 0 ? 1 : -1) *
+                                (_trajSegment.angle_ > 0 ? 1 : -1) *
                                     Motion::DisplacementComputer(
-                                        _pathSegment.angle_, robot_.max_angVel_, robot_.max_angAcc_,
-                                        _time - _pathSegment.departure_time_);
+                                        _trajSegment.angle_, robot_.max_angVel_, robot_.max_angAcc_,
+                                        _time - _trajSegment.departure_time_);
 
         while (std::fabs(pose.component_.theta) - M_PI > 1e-8 or
                pose.component_.theta + 1e-8 > M_PI)
@@ -326,10 +323,10 @@ Position::Pose MultibotRobot::PoseComputer(
     else
     {
         double displacement = Motion::DisplacementComputer(
-            _pathSegment.distance_, robot_.max_linVel_, robot_.max_linAcc_,
-            _time - _pathSegment.departure_time_ - _pathSegment.rotational_duration_);
+            _trajSegment.distance_, robot_.max_linVel_, robot_.max_linAcc_,
+            _time - _trajSegment.departure_time_ - _trajSegment.rotational_duration_);
 
-        double theta = _pathSegment.goal_.component_.theta;
+        double theta = _trajSegment.goal_.component_.theta;
 
         pose.component_.x = pose.component_.x + displacement * cos(theta);
         pose.component_.y = pose.component_.y + displacement * sin(theta);
@@ -352,9 +349,9 @@ MultibotRobot::MultibotRobot()
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
-    control_command_ = this->create_service<Path>(
+    control_command_ = this->create_service<Traj>(
         "/" + robotNamespace_ + "/path",
-        std::bind(&MultibotRobot::receivePath, this, std::placeholders::_1, std::placeholders::_2));
+        std::bind(&MultibotRobot::receiveTraj, this, std::placeholders::_1, std::placeholders::_2));
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/" + robotNamespace_ + "/odom", qos,

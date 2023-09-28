@@ -15,7 +15,7 @@
 #include "multibot_robot/robot_panel.hpp"
 
 #include "multibot_ros2_interface/msg/robot_state.hpp"
-#include "multibot_ros2_interface/srv/path.hpp"
+#include "multibot_ros2_interface/srv/traj.hpp"
 
 using namespace Instance;
 
@@ -25,11 +25,11 @@ namespace Robot
     {
     private:
         using RobotState = multibot_ros2_interface::msg::RobotState;
-        using LocalPath = multibot_ros2_interface::msg::LocalPath;
-        using Path = multibot_ros2_interface::srv::Path;
+        using LocalTraj = multibot_ros2_interface::msg::LocalTraj;
+        using Traj = multibot_ros2_interface::srv::Traj;
 
     private:
-        struct PathSegment
+        struct TrajSegment
         {
             Position::Pose start_;
             Position::Pose goal_;
@@ -43,7 +43,7 @@ namespace Robot
             double rotational_duration_;
             double translational_duration_;
 
-            PathSegment(const LocalPath &_localPath);
+            TrajSegment(const LocalTraj &_localTraj);
         };
 
     public:
@@ -54,9 +54,9 @@ namespace Robot
 
         void loadRobotInfo();
 
-        void receivePath(
-            const std::shared_ptr<Path::Request> _request,
-            std::shared_ptr<Path::Response> _response);
+        void receiveTraj(
+            const std::shared_ptr<Traj::Request> _request,
+            std::shared_ptr<Traj::Response> _response);
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr _odom_msg);
         void robotPoseCalculate();
@@ -69,7 +69,7 @@ namespace Robot
         std::shared_ptr<rclcpp::Node> nh_;
         rclcpp::TimerBase::SharedPtr update_timer_;
 
-        rclcpp::Service<Path>::SharedPtr control_command_;
+        rclcpp::Service<Traj>::SharedPtr control_command_;
         rclcpp::Publisher<RobotState>::SharedPtr robotState_pub_;
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
 
@@ -80,7 +80,7 @@ namespace Robot
 
     private:
         Position::Pose PoseComputer(
-            const PathSegment _pathSegment,
+            const TrajSegment _pathSegment,
             const double _time);
 
     private:
@@ -88,8 +88,8 @@ namespace Robot
 
         geometry_msgs::msg::PoseStamped::SharedPtr last_amcl_pose_;
 
-        std::vector<PathSegment> path_;
-        int localPathIdx_;
+        std::vector<TrajSegment> path_;
+        int localTrajIdx_;
         bool is_activated_;
 
         std::string robotNamespace_;
