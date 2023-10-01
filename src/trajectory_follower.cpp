@@ -1,5 +1,7 @@
 #include "multibot_robot/trajectory_follower.hpp"
 
+#include <tf2/LinearMath/Quaternion.h>
+
 using namespace Control;
 
 Trajectory_Follower::TrajSegment::TrajSegment(const LocalTraj &_localTraj)
@@ -40,6 +42,37 @@ void Trajectory_Follower::receiveTraj(
 
         traj_.push_back(trajSegment);
     }
+}
+
+void Trajectory_Follower::visualizeTraj()
+{
+    nav_msgs::msg::Path rviz_Path_;
+    {
+        rviz_Path_.header.frame_id = "/map";
+        rviz_Path_.header.stamp = nh_->now();
+
+        rviz_Path_.poses.clear();
+
+        for (const auto& trajSegment : traj_)
+        {
+            geometry_msgs::msg::PoseStamped pose;
+
+            pose.pose.position.x = trajSegment.start_.component_.x;
+            pose.pose.position.y = trajSegment.start_.component_.y;
+            pose.pose.position.z = 0.0;
+
+            tf2::Quaternion q;
+            q.setRPY(0.0, 0.0, trajSegment.start_.component_.theta);
+            pose.pose.orientation.x = q.x();
+            pose.pose.orientation.y = q.y();
+            pose.pose.orientation.z = q.z();
+            pose.pose.orientation.w = q.w();
+
+            rviz_Path_.poses.push_back(pose);
+        }
+    }
+
+    rviz_path_pub_->publish(rviz_Path_);
 }
 
 Position::Pose Trajectory_Follower::PoseComputer(

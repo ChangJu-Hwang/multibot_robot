@@ -186,12 +186,18 @@ void MultibotRobot::auto_control()
     switch (control_strategy_)
     {
     case Control::Strategy::Kanayama:
+    {
         is_goal = not(kanayama_controller_->control(robot_.pose_));
+        kanayama_controller_->visualizeTraj();
         break;
+    }
 
     case Control::Strategy::PID:
+    {
         is_goal = not(pid_controller_->control(robot_.pose_));
+        pid_controller_->visualizeTraj();
         break;
+    }
 
     default:
         break;

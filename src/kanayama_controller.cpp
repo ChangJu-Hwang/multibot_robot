@@ -21,6 +21,7 @@ bool Kanayama_Controller::control(
     if (traj_.front().departure_time_ > time_)
     {
         time_ = time_ + timeStep_;
+        traj_.clear();
 
         cmd_vel_pub_->publish(cmd_vel);
         return true;
@@ -101,6 +102,7 @@ Kanayama_Controller::Kanayama_Controller(
     auto qos = rclcpp::QoS(rclcpp::KeepLast(10));
 
     cmd_vel_pub_ = nh_->create_publisher<geometry_msgs::msg::Twist>("/" + _robot.name_ + "/cmd_vel", qos);
+    rviz_path_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("/" + _robot.name_ + "/rviz_traj", qos);
 
     RCLCPP_INFO(nh_->get_logger(), "Kanayama Controller has been initialzied");
 }

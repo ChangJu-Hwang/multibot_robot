@@ -12,6 +12,8 @@ bool PID_Controller::control(
 
     if (localTrajIdx_ >= static_cast<int>(traj_.size()))
     {
+        traj_.clear();
+
         cmd_vel_pub_->publish(cmd_vel);
         return false;
     }
@@ -100,6 +102,7 @@ PID_Controller::PID_Controller(
         "/" + _robot.name_ + "/odom", qos,
         std::bind(&PID_Controller::odom_callback, this, std::placeholders::_1));
     cmd_vel_pub_ = nh_->create_publisher<geometry_msgs::msg::Twist>("/" + _robot.name_ + "/cmd_vel", qos);
+    rviz_path_pub_ = nh_->create_publisher<nav_msgs::msg::Path>("/" + _robot.name_ + "/rviz_traj", qos);
 
     RCLCPP_INFO(nh_->get_logger(), "PID Controller has been initialzied");
 }

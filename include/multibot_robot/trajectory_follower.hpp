@@ -2,6 +2,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/path.hpp>
 
 #include "multibot_util/Instance.hpp"
 #include "multibot_robot/motion.hpp"
@@ -51,6 +52,7 @@ namespace Control
     public:
         void receiveTraj(
             const std::shared_ptr<Traj::Request> _request);
+        void visualizeTraj();
 
     protected:
         Position::Pose PoseComputer(
@@ -61,6 +63,7 @@ namespace Control
         std::shared_ptr<rclcpp::Node> nh_;
 
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+        rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr rviz_path_pub_;
 
     protected:
         int localTrajIdx_;
