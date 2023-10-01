@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>multibot_robot</name>
-  <version>0.4.0</version>
+  <version>0.5.0</version>
   <description>
     Multi-robot robot
   </description>
@@ -17,13 +17,12 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>multibot_ros2_interface</depend>
   <depend>multibot_util</depend>
 
   <exec_depend>ros2launch</exec_depend>
-  <exec_depend>gazebo_ros</exec_depend>
-  <exec_depend>gazebo</exec_depend>
-  <exec_depend>gazebo_plugins</exec_depend>
+  <exec_depend>cartographer_ros</exec_depend>
 
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
@@ -32,6 +31,5 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <gazebo_ros plugin_path="${prefix}/lib" gazebo_media_path="${prefix}" gazebo_model_path="${prefix}/models"/>
   </export>
 </package>

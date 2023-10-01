@@ -1,4 +1,4 @@
-#include "multibot_robot/motion_controller.hpp"
+#include "multibot_robot/motion.hpp"
 
 #include <math.h>
 
