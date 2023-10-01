@@ -18,9 +18,15 @@
         tolerance: 0.018
 
       controlParam:
-        Kx: 0.25
-        Ky: 1.00
-        Ktheta: 1.27
+        kanayama:
+          Kx: 0.25
+          Ky: 1.00
+          Ktheta: 1.27
+        PID:
+          kp_linear: 0.75
+          kd_linear: 0.15
+          kp_angular: 0.75
+          kd_angular: 0.15
 
       odometry:
         frame_id: "odom"

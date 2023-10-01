@@ -12,6 +12,12 @@ using namespace Instance;
 
 namespace Control
 {
+    enum Strategy
+    {
+        Kanayama,
+        PID
+    }; // enum Strategy
+
     class Trajectory_Follower
     {
     public:

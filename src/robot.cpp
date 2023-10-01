@@ -26,9 +26,11 @@ void MultibotRobot::init_varibales()
 {
     nh_ = std::shared_ptr<::rclcpp::Node>(this, [](::rclcpp::Node *) {});
 
-    is_pannel_running_ = false;
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    is_pannel_running_ = false;
+    control_strategy_ = Control::Strategy::PID;
 }
 
 void MultibotRobot::init_parameters()
@@ -58,6 +60,9 @@ void MultibotRobot::loadRobotInfo()
     this->declare_parameter(robot_.type_ + ".angular.velocity");
     this->declare_parameter(robot_.type_ + ".angular.acceleration");
 
+    this->declare_parameter(robot_.type_ + ".linear.tolerance");
+    this->declare_parameter(robot_.type_ + ".angular.tolerance");
+
     this->declare_parameter("goal.x");
     this->declare_parameter("goal.y");
     this->declare_parameter("goal.theta");
@@ -82,7 +87,19 @@ void MultibotRobot::receiveTraj(
     const std::shared_ptr<Traj::Request> _request,
     std::shared_ptr<Traj::Response> _response)
 {
-    kanayama_controller_->receiveTraj(_request);
+    switch (control_strategy_)
+    {
+    case Control::Strategy::Kanayama:
+        kanayama_controller_->receiveTraj(_request);
+        break;
+
+    case Control::Strategy::PID:
+        pid_controller_->receiveTraj(_request);
+        break;
+
+    default:
+        break;
+    }
 
     _response->receive_status = true;
     robotPanel_->setModeState(PanelUtil::Mode::AUTO);
@@ -143,7 +160,7 @@ void MultibotRobot::run()
 {
     robotPoseCalculate();
     report_state();
-    
+
     auto_control();
 }
 
@@ -165,7 +182,22 @@ void MultibotRobot::auto_control()
             robotPanel_->getModeState() == PanelUtil::AUTO))
         return;
 
-    if (not(kanayama_controller_->control(robot_.pose_)))
+    bool is_goal = false;
+    switch (control_strategy_)
+    {
+    case Control::Strategy::Kanayama:
+        is_goal = not(kanayama_controller_->control(robot_.pose_));
+        break;
+
+    case Control::Strategy::PID:
+        is_goal = not(pid_controller_->control(robot_.pose_));
+        break;
+
+    default:
+        break;
+    }
+
+    if (is_goal)
     {
         std::cout << "Current Pose: " << robot_.pose_ << std::endl;
         robotPanel_->set_pushButton_Manual_clicked();
@@ -183,6 +215,7 @@ MultibotRobot::MultibotRobot()
     init_parameters();
 
     kanayama_controller_ = std::make_shared<Control::Kanayama_Controller>(nh_, robot_);
+    pid_controller_ = std::make_shared<Control::PID_Controller>(nh_, robot_);
 
     receiveTraj_cmd_ = this->create_service<Traj>(
         "/" + robotNamespace_ + "/traj",

@@ -14,7 +14,7 @@ namespace Control
 
     private:
         void init_varibales(const AgentInstance::Agent &_robot);
-        void init_parameters();
+        void init_parameters(const std::string _type);
 
     private:
         // Kanayama Controller Parameter

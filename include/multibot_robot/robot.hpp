@@ -14,6 +14,7 @@
 #include "multibot_robot/motion.hpp"
 #include "multibot_robot/robot_panel.hpp"
 #include "multibot_robot/kanayama_controller.hpp"
+#include "multibot_robot/pid_controller.hpp"
 
 #include "multibot_ros2_interface/msg/robot_state.hpp"
 #include "multibot_ros2_interface/srv/traj.hpp"
@@ -67,7 +68,9 @@ namespace Robot
         std::shared_ptr<Panel> robotPanel_;
         bool is_pannel_running_;
 
+        Control::Strategy control_strategy_;
         std::shared_ptr<Control::Kanayama_Controller> kanayama_controller_;
+        std::shared_ptr<Control::PID_Controller> pid_controller_;
 
     public:
         MultibotRobot();

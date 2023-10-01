@@ -75,14 +75,18 @@ void Kanayama_Controller::init_varibales(const AgentInstance::Agent &_robot)
     max_ang_acc_ = _robot.max_angAcc_;
 }
 
-void Kanayama_Controller::init_parameters()
+void Kanayama_Controller::init_parameters(const std::string _type)
 {
-    nh_->get_parameter_or("linear_tolerance", linear_tolerance_, 0.10);
-    nh_->get_parameter_or("angular_tolerance", angular_tolerance_, 0.018);
+    nh_->declare_parameter(_type + ".controlParam.kanayama.Kx");
+    nh_->declare_parameter(_type + ".controlParam.kanayama.Ky");
+    nh_->declare_parameter(_type + ".controlParam.kanayama.Ktheta");
 
-    nh_->get_parameter_or("Kx", Kx_, 0.25);
-    nh_->get_parameter_or("Ky", Ky_, 1.00);
-    nh_->get_parameter_or("Ktheta", Ktheta_, 1.27);
+    nh_->get_parameter_or(_type + ".linear.tolerance", linear_tolerance_, 0.10);
+    nh_->get_parameter_or(_type + ".angular.tolerance", angular_tolerance_, 0.018);
+
+    nh_->get_parameter_or(_type + ".controlParam.kanayama.Kx", Kx_, 0.25);
+    nh_->get_parameter_or(_type + ".controlParam.kanayama.Ky", Ky_, 1.00);
+    nh_->get_parameter_or(_type + ".controlParam.kanayama.Ktheta", Ktheta_, 1.27);
 }
 
 Kanayama_Controller::Kanayama_Controller(
@@ -92,7 +96,7 @@ Kanayama_Controller::Kanayama_Controller(
     nh_ = _nh;
 
     init_varibales(_robot);
-    init_parameters();
+    init_parameters(_robot.type_);
 
     auto qos = rclcpp::QoS(rclcpp::KeepLast(10));
 
