@@ -30,7 +30,7 @@ void MultibotRobot::init_varibales()
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     is_pannel_running_ = false;
-    control_strategy_ = Control::Strategy::PID;
+    control_strategy_ = Control::Strategy::Kanayama;
 }
 
 void MultibotRobot::init_parameters()
