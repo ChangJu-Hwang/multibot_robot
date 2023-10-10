@@ -15,35 +15,52 @@ def generate_launch_description():
     cartographer_config_dir = os.path.join(multibot_robot_dir, 'config')
     configuration_basename = 'ISR_M2_lds_2d.lua'
 
-    use_sim_time = True
+    use_sim_time = False
 
     robot_name = 'ISR_M2'
     robot_type = 'ISR_M2'
-
-    x = 17.8
-    y = 1.1
-    Y = 0.0
 
     with open(os.path.join(multibot_robot_dir, 'robot', 'robotConfig.yaml')) as robotConfig_params:
         robotConfig_params = yaml.load(robotConfig_params, Loader=yaml.Loader)
         robotConfig_params = robotConfig_params['/**']['ros__parameters'][robot_type]
 
-    # Fake Node
-    isr_m2_fake_node_cmd = IncludeLaunchDescription(
+
+    # ISR_M2 Driver
+    isr_m2_node_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('multibot_driver'), 'launch',
-                                                   'isr_m2_fake_node_launch.py')),
+                                                   'isr_m2_node_launch.py')),
         launch_arguments={
             'robot_name': robot_name,
-            'robot_type': robot_type,
-            'robot_config': os.path.join(multibot_robot_dir, 'robot', 'robotConfig.yaml'),
-            'frame_prefix': robot_name + '/',
             'odom_frame': robot_name + '/' + robotConfig_params['odometry']['frame_id'],
             'base_frame': robot_name + '/' + robotConfig_params['odometry']['child_frame_id'],
-            'x': str(x),
-            'y': str(y),
-            'Y': str(Y)
+            'laser_frame': robot_name + '/' + robotConfig_params['laser']['frame_id'],
+            'laser_offset_x': str(robotConfig_params['laser']['offset_x']),
+            'laser_offset_y': str(robotConfig_params['laser']['offset_y']),
+            'laser_offset_z': str(robotConfig_params['laser']['offset_z'])
         }.items()
     )
+
+    # LIDAR
+    if (robotConfig_params['laser']['type'] == "sick_tim"):
+        lidar_driver = Node(
+            package='sick_tim',
+            executable='sick_tim551_2050001',
+            name='sick_tim_driver',
+            namespace=robot_name,
+            parameters=[
+                {'range_max': '25.0'},
+                {'hostname' : robotConfig_params['laser']['hostname']},
+                {'port': '2112'},
+                {'timelimit': 5},
+                {'frame_id': robot_name + '/' + robotConfig_params['laser']['frame_id']},
+                {'use_sim_time': use_sim_time}
+            ]
+        )
+    elif (robotConfig_params['laser']['type'] == "hokuyo"):
+        print("hokuyo")
+    else:
+        print("WRONG_LIDAR_TYPE")
+        os.abort()
     
     # Robot Node
     multibot_robot_cmd = Node(
@@ -64,7 +81,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         namespace=robot_name,
         output='screen',
-        arguments=[str(x),str(y),'0',str(Y),'0','0',
+        arguments=['0','0','0','0','0','0',
                    'map', robot_name + '/odom']
     )
 
@@ -120,7 +137,8 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Add any conditioned actions
-    ld.add_action(isr_m2_fake_node_cmd)
+    ld.add_action(isr_m2_node_cmd)
+    ld.add_action(lidar_driver)
     ld.add_action(multibot_robot_cmd)
     ld.add_action(map_to_odom)
 
