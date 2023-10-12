@@ -41,11 +41,17 @@ find_package(sensor_msgs REQUIRED)
 
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake_modules)
+find_package(SUITESPARSE REQUIRED)
+find_package(G2O REQUIRED)
+
 ################################################################################
 # Build
 ################################################################################
 include_directories(
   include
+  ${SUITESPARSE_INCLUDE_DIRS}
+  ${G2O_INCLUDE_DIR}
 )
 
 # robot
@@ -68,7 +74,9 @@ set(ROBOT_EXEC_NAME "robot")
 file(GLOB ROBOT_SOURCES "src/*.cpp")
 add_executable(${ROBOT_EXEC_NAME} ${ROBOT_SOURCES} ${PANEL_SOURCES})
 
-target_link_libraries(${ROBOT_EXEC_NAME} Qt5::Widgets)
+target_link_libraries(
+  ${ROBOT_EXEC_NAME}
+  Qt5::Widgets ${SUITESPARSE_LIBRARIES} ${G2O_LIBRARIES})
 ament_target_dependencies(${ROBOT_EXEC_NAME} ${ROBOT_DEPENDENCIES})
 
 target_include_directories(${ROBOT_EXEC_NAME} PUBLIC

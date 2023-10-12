@@ -89,6 +89,7 @@
         "*.ui": "xml",
         "qwidget": "cpp",
         "codecvt": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "*.ipp": "cpp"
     }
 }
