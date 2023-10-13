@@ -1,5 +1,7 @@
 #pragma once
 
+#include <geometry_msgs/msg/twist.hpp>
+
 #include "multibot_robot/g2o_utils/base_mpc_edges.hpp"
 #include "multibot_robot/g2o_utils/vertex_pose.hpp"
 #include "multibot_robot/g2o_utils/vertex_timediff.hpp"
@@ -10,7 +12,7 @@ namespace Control
 {
     namespace MPC
     {
-        class EdgeVelocity : public BaseMPCMultiEdge<2, Eigen::Vector2d>
+        class EdgeVelocity : public BaseMPCMultiEdge<2, const geometry_msgs::msg::Twist*>
         {
         public:
             EdgeVelocity()
@@ -35,15 +37,27 @@ namespace Control
 
                 const double omega = angle_diff / deltaT->estimate();
 
-                _error[0] = std::fabs(vel - _measurement.coeffRef(0));
-                _error[1] = std::fabs(omega - _measurement.coeffRef(1));
+                _error[0] = std::fabs(vel - _measurement->linear.x);
+                _error[1] = std::fabs(omega - _measurement->angular.z);
+
+                // _error[0] = penaltyBoundToInterval(vel, max_vel_lin_, 0.0);
+                // _error[1] = penaltyBoundToInterval(omega, max_vel_ang_, 0.0);
             }
 
-            void setVelocity(double _vel_x, double _vel_theta)
+            void setVelocity(const geometry_msgs::msg::Twist &_vel)
             {
-                _measurement.coeffRef(0) = _vel_x;
-                _measurement.coeffRef(1) = _vel_theta;
+                _measurement = &_vel;
             }
+
+            void setMaxVelocity(double _max_vel_lin, double _max_vel_ang)
+            {
+                max_vel_lin_ = _max_vel_lin;
+                max_vel_ang_ = _max_vel_ang;
+            }
+
+        private:
+            double max_vel_lin_;
+            double max_vel_ang_;
 
         public:
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW

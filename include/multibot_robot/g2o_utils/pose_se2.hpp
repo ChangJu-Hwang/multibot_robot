@@ -4,6 +4,7 @@
 
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose2_d.hpp>
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 
 #include <tf2/convert.h>
 #include <tf2/utils.h>
@@ -28,6 +29,13 @@ namespace Control
             {
                 position_ = _position;
                 theta_ = _theta;
+            }
+
+            PoseSE2(const trajectory_msgs::msg::JointTrajectoryPoint &_trajectoryPoint)
+            {
+                position_.coeffRef(0) = _trajectoryPoint.positions[0];
+                position_.coeffRef(1) = _trajectoryPoint.positions[1];
+                position_.coeffRef(2) = _trajectoryPoint.positions[2];
             }
 
             PoseSE2(

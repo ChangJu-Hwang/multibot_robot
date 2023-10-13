@@ -1,5 +1,7 @@
 #pragma once
 
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+
 #include <g2o/core/base_vertex.h>
 
 #include "multibot_robot/g2o_utils/pose_se2.hpp"
@@ -34,8 +36,17 @@ namespace Control
             }
 
             VertexPose(
+                const trajectory_msgs::msg::JointTrajectoryPoint &_trajectoryPoint,
+                bool _fixed = false)
+            {
+                _estimate.x() = _trajectoryPoint.positions[0];
+                _estimate.y() = _trajectoryPoint.positions[1];
+                _estimate.theta() = _trajectoryPoint.positions[2];
+                setFixed(_fixed);
+            }
+
+            VertexPose(
                 double _x, double _y, double _theta,
-                double _v, double _w,
                 bool _fixed = false)
             {
                 _estimate.x() = _x;
@@ -47,8 +58,8 @@ namespace Control
             ~VertexPose() {}
 
         public:
-            PoseSE2 &state() { return _estimate; }
-            const PoseSE2 &state() const { return _estimate; }
+            PoseSE2 &pose() { return _estimate; }
+            const PoseSE2 &pose() const { return _estimate; }
 
             Eigen::Vector2d &position() { return _estimate.position(); }
             const Eigen::Vector2d &position() const { return _estimate.position(); }
