@@ -37,11 +37,11 @@ namespace Control
 
                 const double omega = angle_diff / deltaT->estimate();
 
-                _error[0] = std::fabs(vel - _measurement->linear.x);
-                _error[1] = std::fabs(omega - _measurement->angular.z);
+                // _error[0] = std::fabs(vel - _measurement->linear.x);
+                // _error[1] = std::fabs(omega - _measurement->angular.z);
 
-                // _error[0] = penaltyBoundToInterval(vel, max_vel_lin_, 0.0);
-                // _error[1] = penaltyBoundToInterval(omega, max_vel_ang_, 0.0);
+                _error[0] = penaltyBoundToInterval(vel, max_vel_lin_, 0.0);
+                _error[1] = penaltyBoundToInterval(omega, max_vel_ang_, 0.0);
             }
 
             void setVelocity(const geometry_msgs::msg::Twist &_vel)

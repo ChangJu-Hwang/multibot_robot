@@ -172,7 +172,7 @@ namespace Control
                 _error[1] = penaltyBoundToInterval(acc_rot, max_acc_ang_, 0.0);
             }
 
-            void setInitialVelocity(const geometry_msgs::msg::Twist &_vel_goal)
+            void setGoalVelocity(const geometry_msgs::msg::Twist &_vel_goal)
             {
                 _measurement = &_vel_goal;
             }

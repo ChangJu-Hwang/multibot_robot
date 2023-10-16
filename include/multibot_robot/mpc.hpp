@@ -129,7 +129,7 @@ namespace Control
             double getSumOfTimeDiffsUpToIdx(int _index) const;
             double getAccumulatedDistance() const;
 
-        private:
+        public:
             int sizePoses() const { return (int)pose_vec_.size(); }
             int sizeTimeDiffs() const { return (int)timediff_vec_.size(); }
             bool isInit() const { return not(pose_vec_.empty() or timediff_vec_.empty()); }

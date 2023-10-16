@@ -118,7 +118,7 @@ namespace Control
         public:
             virtual bool resize(size_t _size)
             {
-                g2o::BaseMultiEdge<D, E>::resize(size);
+                g2o::BaseMultiEdge<D, E>::resize(_size);
 
                 for (std::size_t i = 0; i < _vertices.size(); ++i)
                     _vertices[i] = NULL;
@@ -135,7 +135,7 @@ namespace Control
                 return true;
             }
 
-            virtual bool write(std::ostream &_os)
+            virtual bool write(std::ostream &_os) const
             {
                 return _os.good();
             }

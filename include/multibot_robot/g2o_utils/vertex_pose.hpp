@@ -10,7 +10,7 @@ namespace Control
 {
     namespace MPC
     {
-        class VertexPose : public g2o::BaseVertex<5, PoseSE2>
+        class VertexPose : public g2o::BaseVertex<3, PoseSE2>
         {
         public:
             VertexPose(bool _fixed = false)
