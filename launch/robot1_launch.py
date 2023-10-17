@@ -58,7 +58,18 @@ def generate_launch_description():
             ]
         )
     elif (robotConfig_params['laser']['type'] == "hokuyo"):
-        print("hokuyo")
+        lidar_driver = Node(
+            package='urg_node',
+            executable='urg_node_driver',
+            name='hokuyo_driver',
+            namespace=robot_params['name'],
+            output='screen',
+            parameters=[
+                {'ip_address': "192.168.1.13"},
+                {'laser_frame_id': robot_params['name'] + '/' + robotConfig_params['laser']['frame_id']},
+                {'use_sim_time': use_sim_time}
+            ]
+        )
     else:
         print("WRONG_LIDAR_TYPE")
         os.abort()
