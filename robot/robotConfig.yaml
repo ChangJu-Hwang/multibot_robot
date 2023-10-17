@@ -8,20 +8,20 @@
         radius: 0.32
 
       linear:
-        velocity: 0.2
-        acceleration: 0.05
+        velocity: 0.3
+        acceleration: 0.5
         tolerance: 0.10
 
       angular:
         velocity: 0.2
-        acceleration: 0.05
+        acceleration: 0.4
         tolerance: 0.018
 
       controlParam:
         kanayama:
           Kx: 0.25
           Ky: 1.00
-          Ktheta: 1.27
+          Ktheta: 1.00
         PID:
           kp_linear: 0.75
           kd_linear: 0.15
@@ -33,8 +33,8 @@
         child_frame_id: "base_link"
 
       laser:
-        type: "sick_tim" # sick_tim or hokuyo
-        hostname: '192.168.1.204'
+        type: "hokuyo" # sick_tim or hokuyo
+        hostname: '192.168.1.13'
         frame_id: "laser"
         scan_topic: "scan"
         offset_x: 0.0
